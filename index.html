@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Викторина</h1>
+        </header>
+        
+        <main id="quiz-container">
+            <div id="start-screen" class="screen">
+                <h2>Добро пожаловать в викторину!</h2>
+                <p>Проверьте свои знания в различных областях</p>
+                <button id="start-btn" class="btn">Начать викторину</button>
+            </div>
+            
+            <div id="quiz-screen" class="screen hidden">
+                <div class="question-info">
+                    <span id="question-number">Вопрос 1</span>
+                    <span id="score">Счет: 0</span>
+                </div>
+                
+                <div id="question-container">
+                    <h3 id="question-text">Загрузка вопроса...</h3>
+                    <div id="answers-container"></div>
+                </div>
+                
+                <button id="next-btn" class="btn hidden">Следующий вопрос</button>
+            </div>
+            
+            <div id="result-screen" class="screen hidden">
+                <h2>Результаты</h2>
+                <div id="final-score">Ваш счет: 0 из 0</div>
+                <div id="percentage">0%</div>
+                <button id="restart-btn" class="btn">Начать заново</button>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
