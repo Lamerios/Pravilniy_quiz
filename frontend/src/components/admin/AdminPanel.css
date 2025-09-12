@@ -326,9 +326,14 @@
 
 /* Teams List */
 .teams-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-lg);
+}
+
+/* Full-width team cards when listed by rows */
+.teams-list .team-card {
+  width: 100%;
 }
 
 /* Form Actions */
