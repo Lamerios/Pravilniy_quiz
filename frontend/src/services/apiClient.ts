@@ -288,6 +288,23 @@ class ApiClient {
     }
   }
 
+  // ===================== Public API =====================
+
+  async getPublicLastGame(): Promise<any | null> {
+    const res = await this.client.get('/api/public/last-game');
+    return res.data.data || null;
+  }
+
+  async getPublicStats(): Promise<any> {
+    const res = await this.client.get('/api/public/stats');
+    return res.data.data;
+  }
+
+  async getPublicTeamProfile(teamId: number): Promise<any> {
+    const res = await this.client.get(`/api/public/teams/${teamId}`);
+    return res.data.data;
+  }
+
   /**
    * Check API health
    * @returns Promise<boolean>

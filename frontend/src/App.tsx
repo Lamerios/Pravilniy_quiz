@@ -10,6 +10,8 @@ import './App.css';
 // Import components
 import AdminPanel from './components/admin/AdminPanel.tsx';
 import Scoreboard from './components/scoreboard/Scoreboard.tsx';
+import Home from './components/home/Home.tsx';
+import TeamProfile from './components/team/TeamProfile.tsx';
 
 function App() {
   return (
@@ -21,8 +23,8 @@ function App() {
         
         <main>
           <Routes>
-            {/* Default route - redirect to admin for now */}
-            <Route path="/" element={<Navigate to="/admin" replace />} />
+            {/* Public Home */}
+            <Route path="/" element={<Home />} />
             
             {/* Admin panel routes */}
             <Route path="/admin" element={<AdminPanel />} />
@@ -30,6 +32,7 @@ function App() {
             
             {/* Public scoreboard routes */}
             <Route path="/board/:gameId" element={<Scoreboard />} />
+            <Route path="/team/:teamId" element={<TeamProfile />} />
             
             {/* 404 fallback */}
             <Route path="*" element={<NotFound />} />
