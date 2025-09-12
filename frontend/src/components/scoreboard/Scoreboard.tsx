@@ -189,15 +189,15 @@ const Scoreboard: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th className="header-icon" style={{ textAlign: 'center', width: '56px' }} title="Место">🏆</th>
+                  <th className="header-icon" style={{ textAlign: 'center', width: '64px' }} title="Место">🏆</th>
                   <th style={{ textAlign: 'left' }}>Команда</th>
-                  <th className="header-icon" style={{ textAlign: 'center', width: '56px' }} title="Номер стола">
+                  <th className="header-icon" style={{ textAlign: 'center', width: '64px' }} title="Номер стола">
                     <svg className="icon-table" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <rect x="3" y="7" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="2" />
                       <path d="M7 11v6M17 11v6M3 11v6M21 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </th>
-                  <th className="header-icon" style={{ textAlign: 'center', width: '64px' }} title="Участники">👥</th>
+                  <th className="header-icon" style={{ textAlign: 'center', width: '72px' }} title="Участники">👥</th>
                   {roundNumbers.map(rn => (
                     <th key={`r${rn}`} style={{ textAlign: 'center', minWidth: '60px' }}>Р{rn}</th>
                   ))}
