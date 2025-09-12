@@ -152,9 +152,6 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                   <span className="stat">
                     <strong>Раундов:</strong> {template.rounds?.length || 0}
                   </span>
-                  <span className="stat">
-                    <strong>Создан:</strong> {new Date(template.created_at).toLocaleDateString('ru-RU')}
-                  </span>
                 </div>
 
                 {template.rounds && template.rounds.length > 0 && (
