@@ -241,6 +241,45 @@ export const statsService = {
       recent_games: recent
     };
   }
+  ,
+  /**
+   * Server-side global ranking sorting + pagination (reuses aggregated data)
+   */
+  async getGlobalRanking(params: { sort?: string; order?: 'asc' | 'desc'; page?: number; limit?: number }) {
+    const base = await this.getStats();
+    const sort = (params.sort || 'total_points') as 'games' | 'avg_place' | 'total_points' | 'avg_points';
+    const order = params.order || (sort === 'avg_place' ? 'asc' : 'desc');
+    const page = Math.max(1, Number(params.page || 1));
+    const limit = Math.max(1, Math.min(100, Number(params.limit || 10)));
+
+    let arr = base.global_ranking.slice();
+    arr.sort((a, b) => {
+      const va = (a as any)[sort];
+      const vb = (b as any)[sort];
+      if (va !== vb) return (order === 'asc' ? 1 : -1) * (va > vb ? 1 : -1);
+      // tiebreaks
+      if (sort !== 'avg_place') {
+        if (a.avg_points !== b.avg_points) return (order === 'asc' ? 1 : -1) * (a.avg_points > b.avg_points ? 1 : -1);
+        if (a.games !== b.games) return (order === 'asc' ? 1 : -1) * (a.games > b.games ? 1 : -1);
+      }
+      return 0;
+    });
+
+    const total = arr.length;
+    const start = (page - 1) * limit;
+    const items = arr.slice(start, start + limit);
+    return { items, page, limit, total, total_pages: Math.max(1, Math.ceil(total / limit)) };
+  },
+
+  async getTeamsPaginated(params: { page?: number; limit?: number }) {
+    const page = Math.max(1, Number(params.page || 1));
+    const limit = Math.max(1, Math.min(100, Number(params.limit || 10)));
+    const offset = (page - 1) * limit;
+    const totalQ = await database.query('SELECT COUNT(*)::int AS c FROM teams');
+    const rowsQ = await database.query('SELECT id, name, logo_path, created_at FROM teams ORDER BY name ASC LIMIT $1 OFFSET $2', [limit, offset]);
+    const total = Number(totalQ.rows[0].c) || 0;
+    return { items: rowsQ.rows, page, limit, total, total_pages: Math.max(1, Math.ceil(total / limit)) };
+  }
 };
 
 

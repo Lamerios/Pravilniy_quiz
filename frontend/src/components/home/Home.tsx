@@ -3,21 +3,54 @@ import { Link } from 'react-router-dom';
 import { apiClient } from '../../services/apiClient.ts';
 import '../scoreboard/Scoreboard.css';
 
+const TeamsDirectory: React.FC = () => {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [data, setData] = useState<any>({ items: [], page: 1, total_pages: 1 });
+
+  useEffect(() => {
+    (async () => {
+      const d = await apiClient.getPublicTeams({ page, limit });
+      setData(d);
+    })();
+  }, [page, limit]);
+
+  return (
+    <div>
+      <ul>
+        {data.items.map((t: any) => (
+          <li key={t.id}><Link to={`/team/${t.id}`}>{t.name}</Link></li>
+        ))}
+      </ul>
+      <div className="mt-2" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button className="btn btn-secondary" disabled={page<=1} onClick={() => setPage(page-1)}>Назад</button>
+        <div className="muted">Стр. {data.page} / {data.total_pages}</div>
+        <button className="btn btn-secondary" disabled={page>=data.total_pages} onClick={() => setPage(page+1)}>Вперёд</button>
+      </div>
+    </div>
+  );
+};
+
 const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [last, setLast] = useState<any | null>(null);
   const [stats, setStats] = useState<any | null>(null);
+  const [ranking, setRanking] = useState<any>({ items: [], page: 1, limit: 10, total: 0, total_pages: 1 });
+  const [teamsPage, setTeamsPage] = useState(1);
+  const [sort, setSort] = useState<{ key: string; order: 'asc' | 'desc' }>({ key: 'total_points', order: 'desc' });
 
   useEffect(() => {
     (async () => {
       try {
-        const [lg, st] = await Promise.all([
+        const [lg, st, rk] = await Promise.all([
           apiClient.getPublicLastGame(),
-          apiClient.getPublicStats()
+          apiClient.getPublicStats(),
+          apiClient.getPublicRanking({ page: 1, limit: 10 })
         ]);
         setLast(lg);
         setStats(st);
+        setRanking(rk);
       } catch (e: any) {
         setError(e.message || 'Не удалось загрузить данные');
       } finally {
@@ -57,17 +90,17 @@ const Home: React.FC = () => {
                   <thead>
                     <tr>
                       <th style={{ textAlign: 'left' }}>Команда</th>
-                      <th style={{ textAlign: 'center' }}>Игр</th>
-                      <th style={{ textAlign: 'center' }}>Среднее место</th>
-                      <th style={{ textAlign: 'center' }}>Сумма баллов</th>
-                      <th style={{ textAlign: 'center' }}>Средний итог</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'games' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'games', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'games', order: order as any, page: 1, limit: ranking.limit })); }}>Игр {sort.key==='games'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_place' && sort.order === 'asc' ? 'desc' : 'asc'; setSort({ key: 'avg_place', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_place', order: order as any, page: 1, limit: ranking.limit })); }}>Среднее место {sort.key==='avg_place'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'total_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'total_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'total_points', order: order as any, page: 1, limit: ranking.limit })); }}>Сумма баллов {sort.key==='total_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'avg_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_points', order: order as any, page: 1, limit: ranking.limit })); }}>Средний итог {sort.key==='avg_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
                       <th style={{ textAlign: 'center' }}>🥇</th>
                       <th style={{ textAlign: 'center' }}>🥈</th>
                       <th style={{ textAlign: 'center' }}>🥉</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.global_ranking?.map((t: any) => (
+                    {ranking.items?.map((t: any) => (
                       <tr key={t.team_id}>
                         <td><Link to={`/team/${t.team_id}`}>{t.team_name}</Link></td>
                         <td style={{ textAlign: 'center' }}>{t.games}</td>
@@ -81,6 +114,11 @@ const Home: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+              <div className="mt-2" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" disabled={ranking.page<=1} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page-1, limit: ranking.limit }))}>Назад</button>
+                <div className="muted">Стр. {ranking.page} / {ranking.total_pages}</div>
+                <button className="btn btn-secondary" disabled={ranking.page>=ranking.total_pages} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page+1, limit: ranking.limit }))}>Вперёд</button>
+              </div>
               </div>
             </div>
           </div>
@@ -140,17 +178,12 @@ const Home: React.FC = () => {
           </div>
         ) : null}
 
-        {/* All teams paginated (client-side simple) */}
-        {stats?.global_ranking?.length ? (
+        {/* All teams paginated - server-side */}
+        {true ? (
           <div className="card" style={{ marginTop: 16 }}>
             <div className="card-body">
               <h3>Все команды</h3>
-              <ul>
-                {stats.global_ranking.slice(0, 10).map((t: any) => (
-                  <li key={t.team_id}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link></li>
-                ))}
-              </ul>
-              <div className="muted">Пагинация по 10 записей (расширим по необходимости)</div>
+              <TeamsDirectory />
             </div>
           </div>
         ) : null}

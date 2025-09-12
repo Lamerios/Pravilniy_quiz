@@ -305,6 +305,16 @@ class ApiClient {
     return res.data.data;
   }
 
+  async getPublicRanking(params: { sort?: string; order?: 'asc'|'desc'; page?: number; limit?: number }): Promise<any> {
+    const res = await this.client.get('/api/public/ranking', { params });
+    return res.data.data;
+  }
+
+  async getPublicTeams(params: { page?: number; limit?: number }): Promise<any> {
+    const res = await this.client.get('/api/public/teams', { params });
+    return res.data.data;
+  }
+
   /**
    * Check API health
    * @returns Promise<boolean>
