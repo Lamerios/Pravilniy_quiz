@@ -8,8 +8,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 
 // Import components
-import AdminPanel from './components/admin/AdminPanel';
-// import Scoreboard from './components/scoreboard/Scoreboard';
+import AdminPanel from './components/admin/AdminPanel.tsx';
+import Scoreboard from './components/scoreboard/Scoreboard.tsx';
 
 function App() {
   return (
@@ -29,7 +29,7 @@ function App() {
             <Route path="/admin/*" element={<AdminPanel />} />
             
             {/* Public scoreboard routes */}
-            <Route path="/board/:gameId" element={<ScoreboardPlaceholder />} />
+            <Route path="/board/:gameId" element={<Scoreboard />} />
             
             {/* 404 fallback */}
             <Route path="*" element={<NotFound />} />
@@ -39,37 +39,6 @@ function App() {
     </Router>
   );
 }
-
-// Placeholder components for initial setup
-const AdminPlaceholder: React.FC = () => (
-  <div style={{ padding: '20px', textAlign: 'center' }}>
-    <h2>Admin Panel</h2>
-    <p>Административная панель будет реализована в следующих итерациях</p>
-    <div style={{ marginTop: '20px', color: '#666' }}>
-      <p>Планируемые разделы:</p>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        <li>📋 Управление шаблонами игр</li>
-        <li>👥 Управление командами</li>
-        <li>🎮 Создание и проведение игр</li>
-      </ul>
-    </div>
-  </div>
-);
-
-const ScoreboardPlaceholder: React.FC = () => (
-  <div style={{ padding: '20px', textAlign: 'center' }}>
-    <h2>Публичное табло</h2>
-    <p>Табло результатов будет реализовано в следующих итерациях</p>
-    <div style={{ marginTop: '20px', color: '#666' }}>
-      <p>Планируемые функции:</p>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        <li>📊 Текущие результаты команд</li>
-        <li>⚡ Обновление в реальном времени</li>
-        <li>🏆 Рейтинг команд</li>
-      </ul>
-    </div>
-  </div>
-);
 
 const NotFound: React.FC = () => (
   <div style={{ padding: '20px', textAlign: 'center' }}>

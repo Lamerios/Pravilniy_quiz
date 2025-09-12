@@ -3,6 +3,11 @@
  * Handles PostgreSQL connection and query execution
  */
 
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env from backend directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { Pool, PoolClient, QueryResult } from 'pg';
 import { logger } from '../utils/logger';
 
@@ -19,13 +24,36 @@ class Database {
   private config: DatabaseConfig;
 
   constructor() {
+    // Use environment variables ONLY, no hardcoded values
     this.config = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'quiz_game',
-      user: process.env.DB_USER || 'quiz_user',
-      password: process.env.DB_PASSWORD || 'quiz_password'
+      host: process.env.DB_HOST!,
+      port: parseInt(process.env.DB_PORT!),
+      database: process.env.DB_NAME!,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASSWORD!
     };
+    
+    // Validate required config
+    if (!this.config.host || !this.config.port || !this.config.database || 
+        !this.config.user || !this.config.password) {
+      logger.error('Database configuration missing', {
+        hasHost: !!process.env.DB_HOST,
+        hasPort: !!process.env.DB_PORT,
+        hasDatabase: !!process.env.DB_NAME,
+        hasUser: !!process.env.DB_USER,
+        hasPassword: !!process.env.DB_PASSWORD
+      });
+      throw new Error('Database configuration is incomplete. Check .env file');
+    }
+
+    // Debug: log connection config (without password)
+    logger.info('Database config', {
+      host: this.config.host,
+      port: this.config.port,
+      database: this.config.database,
+      user: this.config.user,
+      hasPassword: !!this.config.password
+    });
 
     this.pool = new Pool(this.config);
     this.setupEventHandlers();

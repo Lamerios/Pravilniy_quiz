@@ -4,18 +4,27 @@
  */
 
 import React, { useState } from 'react';
-import { GameTemplate } from '../../../../shared/types';
-import TemplateList from './TemplateList';
-import TemplateForm from './TemplateForm';
+import { GameTemplate, Game } from '../../../../shared/types';
+import TeamsManager from './TeamsManager.tsx';
+import TemplateList from './TemplateList.tsx';
+import TemplateForm from './TemplateForm.tsx';
+import GameList from './GameList.tsx';
+import GameForm from './GameForm.tsx';
+import GameManager from './GameManager.tsx';
 import './AdminPanel.css';
 
 type AdminView = 'templates' | 'teams' | 'games';
 type TemplateMode = 'list' | 'create' | 'edit';
+type GameMode = 'list' | 'create' | 'view';
 
 export const AdminPanel: React.FC = () => {
-  const [currentView, setCurrentView] = useState<AdminView>('templates');
+  const [currentView, setCurrentView] = useState<AdminView>('games');
+  
   const [templateMode, setTemplateMode] = useState<TemplateMode>('list');
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
+
+  const [gameMode, setGameMode] = useState<GameMode>('list');
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
   /**
    * Handle template creation
@@ -64,18 +73,14 @@ export const AdminPanel: React.FC = () => {
       <button
         className={`nav-tab ${currentView === 'teams' ? 'active' : ''}`}
         onClick={() => setCurrentView('teams')}
-        disabled
       >
         👥 Команды
-        <span className="coming-soon">(скоро)</span>
       </button>
       <button
         className={`nav-tab ${currentView === 'games' ? 'active' : ''}`}
         onClick={() => setCurrentView('games')}
-        disabled
       >
         🎮 Игры
-        <span className="coming-soon">(скоро)</span>
       </button>
     </nav>
   );
@@ -109,38 +114,51 @@ export const AdminPanel: React.FC = () => {
    * Render placeholder for teams section
    */
   const renderTeamsSection = () => (
-    <div className="section-placeholder">
-      <h2>👥 Управление командами</h2>
-      <p>Раздел управления командами будет доступен в следующей итерации</p>
-      <div className="placeholder-features">
-        <h3>Планируемые функции:</h3>
-        <ul>
-          <li>✅ Создание и редактирование команд</li>
-          <li>✅ Загрузка логотипов команд</li>
-          <li>✅ Управление справочником команд</li>
-        </ul>
-      </div>
-    </div>
+    <TeamsManager />
   );
 
   /**
-   * Render placeholder for games section
+   * Render games section
    */
-  const renderGamesSection = () => (
-    <div className="section-placeholder">
-      <h2>🎮 Управление играми</h2>
-      <p>Раздел управления играми будет доступен в следующих итерациях</p>
-      <div className="placeholder-features">
-        <h3>Планируемые функции:</h3>
-        <ul>
-          <li>✅ Создание игр на основе шаблонов</li>
-          <li>✅ Добавление команд-участников</li>
-          <li>✅ Проведение игр в реальном времени</li>
-          <li>✅ Управление счетом по раундам</li>
-        </ul>
-      </div>
-    </div>
-  );
+  const renderGamesSection = () => {
+    switch (gameMode) {
+      case 'create':
+        return (
+          <GameForm
+            onSave={(game) => {
+              console.log('Game saved:', game);
+              setGameMode('list');
+            }}
+            onCancel={() => setGameMode('list')}
+          />
+        );
+      case 'view':
+        return (
+          selectedGame ? (
+            <GameManager
+              gameId={selectedGame.id}
+              onBack={() => setGameMode('list')}
+            />
+          ) : (
+            <div className="section-placeholder">
+              <h2>Игра не выбрана</h2>
+              <button className="btn btn-secondary" onClick={() => setGameMode('list')}>Назад к списку</button>
+            </div>
+          )
+        );
+      case 'list':
+      default:
+        return (
+          <GameList
+            onCreateGame={() => setGameMode('create')}
+            onViewGame={(game) => {
+              setSelectedGame(game);
+              setGameMode('view');
+            }}
+          />
+        );
+    }
+  };
 
   /**
    * Render current section content

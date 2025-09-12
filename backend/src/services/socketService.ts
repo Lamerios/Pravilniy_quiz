@@ -5,7 +5,7 @@
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { logger } from '../utils/logger';
-import { SocketEvents } from '../../../shared/types';
+import { SocketEvents } from '../types/shared';
 
 /**
  * Setup Socket.IO event handlers

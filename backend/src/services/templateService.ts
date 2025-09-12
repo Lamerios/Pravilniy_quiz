@@ -5,7 +5,7 @@
 
 import { database } from '../db/database';
 import { logger } from '../utils/logger';
-import { GameTemplate, TemplateRound, CreateGameTemplateRequest, ApiResponse } from '../../../shared/types';
+import { GameTemplate, TemplateRound, CreateGameTemplateRequest, ApiResponse } from '../types/shared';
 import { validateCreateTemplate, validateUpdateTemplate, sanitizeTemplateData } from '../models/Template';
 
 export class TemplateService {
@@ -281,7 +281,7 @@ export class TemplateService {
         [templateId]
       );
 
-      const deleted = result.rowCount > 0;
+      const deleted = (result.rowCount || 0) > 0;
       
       if (deleted) {
         logger.info('Template deleted successfully', { templateId });

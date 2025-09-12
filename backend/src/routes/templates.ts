@@ -6,7 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { templateService } from '../services/templateService';
 import { logger } from '../utils/logger';
-import { ApiResponse } from '../../../shared/types';
+import { ApiResponse } from '../types/shared';
 
 const router = Router();
 

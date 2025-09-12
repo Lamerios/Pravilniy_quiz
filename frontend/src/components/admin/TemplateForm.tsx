@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameTemplate, CreateGameTemplateRequest, CreateTemplateRoundRequest } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient';
+import { apiClient } from '../../services/apiClient.ts';
 
 interface TemplateFormProps {
   template?: GameTemplate | null;

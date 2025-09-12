@@ -4,14 +4,26 @@
  */
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { ApiResponse, GameTemplate, CreateGameTemplateRequest } from '../../../shared/types';
+import { 
+  ApiResponse, 
+  GameTemplate, 
+  CreateGameTemplateRequest, 
+  Team, 
+  CreateTeamRequest, 
+  UpdateTeamRequest,
+  Game,
+  CreateGameRequest,
+  GameStatus,
+  RoundScore,
+  UpdateScoreRequest
+} from '../../../shared/types';
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -125,6 +137,153 @@ class ApiClient {
     } catch (error: any) {
       console.error('Failed to delete template:', error);
       const message = error.response?.data?.error || 'Не удалось удалить шаблон игры';
+      throw new Error(message);
+    }
+  }
+
+  // ===================== Teams API =====================
+
+  async getTeams(): Promise<Team[]> {
+    try {
+      const response: AxiosResponse<ApiResponse<Team[]>> = await this.client.get('/api/teams');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      throw new Error('Не удалось загрузить команды');
+    }
+  }
+
+  async createTeam(payload: CreateTeamRequest): Promise<Team> {
+    try {
+      const response: AxiosResponse<ApiResponse<Team>> = await this.client.post('/api/teams', payload);
+      if (!response.data.data) throw new Error('Не удалось создать команду');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось создать команду';
+      throw new Error(message);
+    }
+  }
+
+  async updateTeam(id: number, payload: UpdateTeamRequest): Promise<Team> {
+    try {
+      const response: AxiosResponse<ApiResponse<Team>> = await this.client.put(`/api/teams/${id}`, payload);
+      if (!response.data.data) throw new Error('Не удалось обновить команду');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось обновить команду';
+      throw new Error(message);
+    }
+  }
+
+  async deleteTeam(id: number): Promise<void> {
+    try {
+      await this.client.delete(`/api/teams/${id}`);
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось удалить команду';
+      throw new Error(message);
+    }
+  }
+
+  async uploadTeamLogo(id: number, file: File): Promise<Team> {
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const response: AxiosResponse<ApiResponse<Team>> = await this.client.post(`/api/teams/${id}/logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (!response.data.data) throw new Error('Не удалось загрузить логотип');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось загрузить логотип';
+      throw new Error(message);
+    }
+  }
+
+  // ===================== Games API =====================
+
+  async getGames(): Promise<Game[]> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game[]>> = await this.client.get('/api/games');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Failed to fetch games:', error);
+      throw new Error('Не удалось загрузить список игр');
+    }
+  }
+
+  async getGame(id: number): Promise<Game> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game>> = await this.client.get(`/api/games/${id}`);
+      if (!response.data.data) throw new Error('Игра не найдена');
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch game:', error);
+      throw new Error('Не удалось загрузить игру');
+    }
+  }
+
+  async createGame(payload: CreateGameRequest): Promise<Game> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game>> = await this.client.post('/api/games', payload);
+      if (!response.data.data) throw new Error('Не удалось создать игру');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось создать игру';
+      throw new Error(message);
+    }
+  }
+
+  async updateParticipants(gameId: number, updates: { team_id: number; table_number: string | null }[]): Promise<any[]> {
+    try {
+      const response: AxiosResponse<ApiResponse<any[]>> = await this.client.put(`/api/games/${gameId}/participants`, updates);
+      return response.data.data || [];
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось обновить участников игры';
+      throw new Error(message);
+    }
+  }
+
+  async updateGameStatus(gameId: number, status: GameStatus): Promise<Game> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game>> = await this.client.put(`/api/games/${gameId}/status`, { status });
+      if (!response.data.data) throw new Error('Не удалось обновить статус игры');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось обновить статус игры';
+      throw new Error(message);
+    }
+  }
+
+  async setGameRound(gameId: number, current_round: number): Promise<Game> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game>> = await this.client.put(`/api/games/${gameId}/round`, { current_round });
+      if (!response.data.data) throw new Error('Не удалось изменить раунд');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось изменить раунд';
+      throw new Error(message);
+    }
+  }
+
+  async upsertScore(gameId: number, payload: UpdateScoreRequest): Promise<RoundScore> {
+    try {
+      const response: AxiosResponse<ApiResponse<RoundScore>> = await this.client.post(`/api/games/${gameId}/scores`, payload);
+      if (!response.data.data) throw new Error('Не удалось сохранить счёт');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось сохранить счёт';
+      throw new Error(message);
+    }
+  }
+
+  async getScores(gameId: number): Promise<RoundScore[]> {
+    try {
+      const response: AxiosResponse<ApiResponse<RoundScore[]>> = await this.client.get(`/api/games/${gameId}/scores`);
+      return response.data.data || [];
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Не удалось загрузить результаты';
       throw new Error(message);
     }
   }

@@ -23,7 +23,7 @@ CREATE TABLE template_rounds (
     template_id INTEGER REFERENCES game_templates(id) ON DELETE CASCADE,
     round_number INTEGER NOT NULL,
     name VARCHAR(100) NOT NULL,
-    max_score INTEGER NOT NULL
+    max_score NUMERIC(5,1) NOT NULL
 );
 
 -- Games table (игры)
@@ -33,6 +33,7 @@ CREATE TABLE games (
     template_id INTEGER REFERENCES game_templates(id),
     status VARCHAR(20) DEFAULT 'created', -- 'created', 'active', 'finished'
     current_round INTEGER DEFAULT 0,
+    event_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -41,7 +42,9 @@ CREATE TABLE game_participants (
     id SERIAL PRIMARY KEY,
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
     team_id INTEGER REFERENCES teams(id),
-    table_number INTEGER
+    table_number VARCHAR(64),
+    table_code VARCHAR(64),
+    participants_count INTEGER
 );
 
 -- Round scores table (баллы за раунды)
@@ -50,7 +53,7 @@ CREATE TABLE round_scores (
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
     team_id INTEGER REFERENCES teams(id),
     round_number INTEGER NOT NULL,
-    score INTEGER DEFAULT 0,
+    score NUMERIC(5,1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

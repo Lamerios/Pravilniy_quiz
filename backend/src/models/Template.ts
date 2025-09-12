@@ -3,7 +3,7 @@
  * Handles game template data types and validation logic
  */
 
-import { GameTemplate, TemplateRound, CreateGameTemplateRequest, CreateTemplateRoundRequest } from '../../../shared/types';
+import { GameTemplate, TemplateRound, CreateGameTemplateRequest, CreateTemplateRoundRequest } from '../types/shared';
 
 /**
  * Validates game template creation request
@@ -142,7 +142,7 @@ export function validateUpdateTemplate(data: any): { isValid: boolean; errors: s
 export function sanitizeTemplateData(data: CreateGameTemplateRequest): CreateGameTemplateRequest {
   return {
     name: data.name.trim(),
-    description: data.description?.trim() || null,
+    description: data.description?.trim() || undefined,
     rounds: data.rounds.map(round => ({
       round_number: round.round_number,
       name: round.name.trim(),

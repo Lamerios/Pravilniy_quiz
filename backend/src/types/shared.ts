@@ -9,7 +9,6 @@ export interface Team {
   name: string;
   logo_path: string | null;
   created_at: string;
-  members_count?: number | null;
 }
 
 export interface CreateTeamRequest {
@@ -34,7 +33,7 @@ export interface TemplateRound {
   template_id: number;
   round_number: number;
   name: string;
-  max_score: number; // supports one decimal place
+  max_score: number;
 }
 
 export interface CreateGameTemplateRequest {
@@ -46,7 +45,7 @@ export interface CreateGameTemplateRequest {
 export interface CreateTemplateRoundRequest {
   round_number: number;
   name: string;
-  max_score: number; // supports one decimal place
+  max_score: number;
 }
 
 // Game related types
@@ -57,7 +56,6 @@ export interface Game {
   status: GameStatus;
   current_round: number;
   created_at: string;
-  event_date: string | null; // planned date/time in ISO or null
   template?: GameTemplate;
   participants?: GameParticipant[];
 }
@@ -66,9 +64,7 @@ export interface GameParticipant {
   id: number;
   game_id: number;
   team_id: number;
-  table_number: string | null;
-  table_code?: string | null;
-  participants_count?: number | null;
+  table_number: number | null;
   team?: Team;
 }
 
@@ -76,9 +72,7 @@ export interface CreateGameRequest {
   name: string;
   template_id: number;
   team_ids: number[];
-  table_numbers?: (string | null)[];
-  participants_counts?: (number | null)[];
-  event_date?: string | null; // ISO datetime-local or null
+  table_numbers?: number[];
 }
 
 export type GameStatus = 'created' | 'active' | 'finished';
@@ -89,7 +83,7 @@ export interface RoundScore {
   game_id: number;
   team_id: number;
   round_number: number;
-  score: number; // supports one decimal place
+  score: number;
   created_at: string;
   team?: Team;
 }
@@ -97,7 +91,7 @@ export interface RoundScore {
 export interface UpdateScoreRequest {
   team_id: number;
   round_number: number;
-  score: number; // supports one decimal place
+  score: number;
 }
 
 export interface ScoreboardData {
@@ -109,10 +103,9 @@ export interface ScoreboardData {
 export interface TeamTotal {
   team_id: number;
   team: Team;
-  total_score: number; // supports decimals
+  total_score: number;
   round_scores: { [round: number]: number };
-  table_number: string | null;
-  table_code?: string | null;
+  table_number: number | null;
 }
 
 // API Response types
