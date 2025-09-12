@@ -119,73 +119,75 @@ const TeamsManager: React.FC = () => {
         {teams.length === 0 ? (
           <div className="empty-state">Пока нет команд</div>
         ) : (
-          <div className="team-grid">
-            {teams.map(team => (
-              <div key={team.id} className="team-card card">
-                <div className="card-body" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div className="team-logo" style={{ width: 64, height: 64, borderRadius: 8, background: '#f2f2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {team.logo_path ? (
-                      <img src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${team.logo_path}`} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ color: '#888' }}>Нет логотипа</span>
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    {editingId === team.id ? (
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                      />
-                    ) : (
-                      <h3 style={{ margin: 0 }}>{team.name}</h3>
-                    )}
-                    <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
-                      Создана: {new Date(team.created_at).toLocaleString('ru-RU')}
-                    </div>
-                  </div>
-
-                  <div className="team-actions" style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={(el) => (fileInputsRef.current[team.id] = el)}
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) uploadLogo(team.id, file);
-                        if (e.target) e.target.value = '';
-                      }}
+          teams.map(team => (
+            <div key={team.id} className="team-card card">
+              <div className="card-body" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 8, background: '#f2f2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {team.logo_path ? (
+                    <img
+                      className="team-logo-thumb"
+                      src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${team.logo_path}`}
+                      alt={team.name}
                     />
-                    <button className="btn btn-secondary btn-sm" onClick={() => triggerFileInput(team.id)} title="Загрузить логотип">
-                      🖼️
-                    </button>
+                  ) : (
+                    <span style={{ color: '#888', fontSize: 12 }}>Нет логотипа</span>
+                  )}
+                </div>
 
-                    {editingId === team.id ? (
-                      <>
-                        <button className="btn btn-primary btn-sm" onClick={() => saveEdit(team.id)} disabled={!editingName.trim()} title="Сохранить">
-                          ✓
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={cancelEdit} title="Отмена">
-                          ✕
-                        </button>
-                      </>
-                    ) : (
-                      <button className="btn btn-secondary btn-sm" onClick={() => startEdit(team)} title="Редактировать">
-                        ✏️
-                      </button>
-                    )}
-
-                    <button className="btn btn-danger btn-sm" onClick={() => removeTeam(team.id)} title="Удалить">
-                      🗑️
-                    </button>
+                <div style={{ flex: 1 }}>
+                  {editingId === team.id ? (
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                    />
+                  ) : (
+                    <h3 style={{ margin: 0 }}>{team.name}</h3>
+                  )}
+                  <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                    Создана: {new Date(team.created_at).toLocaleString('ru-RU')}
                   </div>
                 </div>
+
+                <div className="team-actions" style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={(el) => (fileInputsRef.current[team.id] = el)}
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadLogo(team.id, file);
+                      if (e.target) e.target.value = '';
+                    }}
+                  />
+                  <button className="btn btn-secondary btn-sm" onClick={() => triggerFileInput(team.id)} title="Загрузить логотип">
+                    🖼️
+                  </button>
+
+                  {editingId === team.id ? (
+                    <>
+                      <button className="btn btn-primary btn-sm" onClick={() => saveEdit(team.id)} disabled={!editingName.trim()} title="Сохранить">
+                        ✓
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={cancelEdit} title="Отмена">
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn btn-secondary btn-sm" onClick={() => startEdit(team)} title="Редактировать">
+                      ✏️
+                    </button>
+                  )}
+
+                  <button className="btn btn-danger btn-sm" onClick={() => removeTeam(team.id)} title="Удалить">
+                    🗑️
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
     </div>
