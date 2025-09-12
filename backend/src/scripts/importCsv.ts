@@ -42,12 +42,12 @@ function isPlaceholder(row: Row): boolean {
 async function ensureImportTemplate(): Promise<number> {
   // create or fetch template "Импорт (7 раундов)"
   const t = await database.query('SELECT id FROM game_templates WHERE name = $1', ['Импорт (7 раундов)']);
-  if (t.rowCount > 0) return t.rows[0].id;
+  if ((t.rowCount ?? 0) > 0) return t.rows[0].id;
   const ins = await database.query('INSERT INTO game_templates(name, description) VALUES ($1, $2) RETURNING id', ['Импорт (7 раундов)', 'Импорт CSV']);
   const templateId = ins.rows[0].id as number;
-  // create 7 rounds without max limit
+  // create 7 rounds with very high max limit to effectively disable validation
   for (let i = 1; i <= 7; i++) {
-    await database.query('INSERT INTO template_rounds(template_id, round_number, name, max_score) VALUES ($1, $2, $3, $4)', [templateId, i, `Раунд ${i}`, null]);
+    await database.query('INSERT INTO template_rounds(template_id, round_number, name, max_score) VALUES ($1, $2, $3, $4)', [templateId, i, `Раунд ${i}`, 1000]);
   }
   return templateId;
 }
@@ -56,7 +56,7 @@ async function upsertTeam(name: string): Promise<number> {
   const trimmed = normalizeTeamName(name);
   // case-insensitive only by case difference
   const q = await database.query('SELECT id, name FROM teams WHERE LOWER(name) = LOWER($1)', [trimmed]);
-  if (q.rowCount > 0) return q.rows[0].id;
+  if ((q.rowCount ?? 0) > 0) return q.rows[0].id;
   const ins = await database.query('INSERT INTO teams(name) VALUES ($1) RETURNING id', [trimmed]);
   return ins.rows[0].id as number;
 }
@@ -70,14 +70,14 @@ function parseDateToISO(dateStr: string): string {
 
 async function upsertGame(source: string, dateIso: string, templateId: number): Promise<number> {
   const q = await database.query('SELECT id FROM games WHERE name = $1 AND DATE(event_date) = DATE($2)', [source, dateIso]);
-  if (q.rowCount > 0) return q.rows[0].id as number;
+  if ((q.rowCount ?? 0) > 0) return q.rows[0].id as number;
   const ins = await database.query('INSERT INTO games(name, template_id, event_date) VALUES ($1, $2, $3) RETURNING id', [source, templateId, dateIso]);
   return ins.rows[0].id as number;
 }
 
 async function upsertParticipant(gameId: number, teamId: number, tableNumber: string | null, count: number | null): Promise<number> {
   const q = await database.query('SELECT id FROM game_participants WHERE game_id = $1 AND team_id = $2', [gameId, teamId]);
-  if (q.rowCount > 0) {
+  if ((q.rowCount ?? 0) > 0) {
     const id = q.rows[0].id as number;
     await database.query('UPDATE game_participants SET table_number=$1, participants_count=$2 WHERE id=$3', [tableNumber, count, id]);
     return id;

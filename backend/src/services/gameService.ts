@@ -229,6 +229,14 @@ class GameService {
   }
 
   /**
+   * Delete game by id (participants and scores will be removed via ON DELETE CASCADE)
+   */
+  public async deleteGame(gameId: number): Promise<boolean> {
+    const result = await database.query('DELETE FROM games WHERE id = $1 RETURNING id', [gameId]);
+    return ((result.rowCount ?? 0) > 0);
+  }
+
+  /**
    * Get all games with basic details
    * @returns A list of games
    */

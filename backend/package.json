@@ -10,7 +10,8 @@
     "test": "jest",
     "db:seed": "ts-node src/db/seed.ts",
     "db:init:admin": "ts-node src/db/adminInit.ts",
-    "import:csv": "ts-node src/scripts/importCsv.ts"
+    "import:csv": "ts-node src/scripts/importCsv.ts",
+    "verify:totals": "ts-node src/scripts/verifyTotals.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

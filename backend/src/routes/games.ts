@@ -21,6 +21,21 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// DELETE /api/games/:id - Delete game
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid game ID' });
+    }
+    const ok = await gameService.deleteGame(id);
+    if (!ok) return res.status(404).json({ success: false, error: 'Game not found' });
+    res.json({ success: true, message: 'Game deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/games/:id - Get a single game by ID
 router.get('/:id', async (req, res, next) => {
   try {

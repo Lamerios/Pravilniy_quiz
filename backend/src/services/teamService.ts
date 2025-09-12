@@ -152,16 +152,9 @@ export class TeamService {
    */
   async deleteTeam(id: number): Promise<boolean> {
     try {
-      // Check if team is used in any games
-      const gameCheck = await database.query(
-        'SELECT COUNT(*) as count FROM game_participants WHERE team_id = $1',
-        [id]
-      );
-      
-      if (parseInt(gameCheck.rows[0].count) > 0) {
-        logger.warn('Attempt to delete team used in games', { teamId: id });
-        throw new Error('Cannot delete team that has participated in games');
-      }
+      // Soft cascade: remove team from games and scores, then delete team
+      await database.query('DELETE FROM round_scores WHERE team_id = $1', [id]);
+      await database.query('DELETE FROM game_participants WHERE team_id = $1', [id]);
 
       const result = await database.query(
         'DELETE FROM teams WHERE id = $1 RETURNING *',

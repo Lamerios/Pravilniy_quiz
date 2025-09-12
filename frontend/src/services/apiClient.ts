@@ -213,6 +213,10 @@ class ApiClient {
     }
   }
 
+  async deleteGame(id: number): Promise<void> {
+    await this.client.delete(`/api/games/${id}`);
+  }
+
   async getGame(id: number): Promise<Game> {
     try {
       const response: AxiosResponse<ApiResponse<Game>> = await this.client.get(`/api/games/${id}`);
