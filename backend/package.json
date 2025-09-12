@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "test": "jest",
     "db:seed": "ts-node src/db/seed.ts",
-    "db:init:admin": "ts-node src/db/adminInit.ts"
+    "db:init:admin": "ts-node src/db/adminInit.ts",
+    "import:csv": "ts-node src/scripts/importCsv.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
