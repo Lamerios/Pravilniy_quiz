@@ -13,10 +13,13 @@ export interface PublicLastGameResponse {
 
 export interface PublicStatsResponse {
   total_games: number;
+  total_teams: number;
   total_points: number;
   leaders_wins: Array<{ team_id: number; team_name: string; wins: number }>;
   leaders_avg: Array<{ team_id: number; team_name: string; avg_total: number; games: number }>;
   leaders_places: Array<{ team_id: number; team_name: string; first_places: number; second_places: number; third_places: number }>;
+  latest_games: Array<{ id: number; name: string; event_date: string | null }>; 
+  global_ranking: Array<{ team_id: number; team_name: string; games: number; total_points: number; avg_points: number; avg_place: number; first_places: number; second_places: number; third_places: number }>;
 }
 
 export interface TeamProfileResponse {
@@ -52,13 +55,16 @@ export const statsService = {
 
   async getStats(): Promise<PublicStatsResponse> {
     const totalGamesQ = await database.query('SELECT COUNT(*)::int AS c FROM games');
+    const totalTeamsQ = await database.query('SELECT COUNT(*)::int AS c FROM teams');
     const totalScoresQ = await database.query('SELECT COALESCE(SUM(score),0)::float AS s FROM round_scores');
+    const latestGamesQ = await database.query('SELECT id, name, event_date FROM games ORDER BY created_at DESC LIMIT 10');
 
     // Получим все игры и посчитаем победителей/места/тоталы
     const gamesQ = await database.query('SELECT id, name, created_at FROM games ORDER BY created_at DESC');
     const leadersWins = new Map<number, { team_id: number; team_name: string; wins: number }>();
     const leadersPlaces = new Map<number, { team_id: number; team_name: string; first_places: number; second_places: number; third_places: number }>();
     const totalsByTeam: Map<number, { team_id: number; team_name: string; total: number; games: number }> = new Map();
+    const placeSumByTeam: Map<number, { sum: number; games: number }> = new Map();
 
     for (const g of gamesQ.rows) {
       const roundsQ = await database.query(
@@ -115,6 +121,12 @@ export const statsService = {
         if (idx === 1) places.second_places += 1;
         if (idx === 2) places.third_places += 1;
         leadersPlaces.set(r.team_id, places);
+
+        // accumulate place sums for average place
+        const ps = placeSumByTeam.get(r.team_id) || { sum: 0, games: 0 };
+        ps.sum += (idx + 1);
+        ps.games += 1;
+        placeSumByTeam.set(r.team_id, ps);
       });
 
       if (rows[0]) {
@@ -134,12 +146,33 @@ export const statsService = {
     const leaders_wins = Array.from(leadersWins.values()).sort((a, b) => b.wins - a.wins).slice(0, 10);
     const leaders_places = Array.from(leadersPlaces.values()).sort((a, b) => b.first_places - a.first_places || b.second_places - a.second_places || b.third_places - a.third_places).slice(0, 10);
 
+    const global_ranking = Array.from(totalsByTeam.values()).map((t) => {
+      const ps = placeSumByTeam.get(t.team_id) || { sum: 0, games: 0 };
+      const avg_place = ps.games > 0 ? Number((ps.sum / ps.games).toFixed(2)) : 0;
+      const avg_points = t.games > 0 ? Number((t.total / t.games).toFixed(2)) : 0;
+      const lp = leadersPlaces.get(t.team_id) || { first_places: 0, second_places: 0, third_places: 0, team_id: t.team_id, team_name: t.team_name };
+      return {
+        team_id: t.team_id,
+        team_name: t.team_name,
+        games: t.games,
+        total_points: Number(t.total.toFixed(2)),
+        avg_points,
+        avg_place,
+        first_places: lp.first_places,
+        second_places: lp.second_places,
+        third_places: lp.third_places
+      };
+    });
+
     return {
       total_games: Number(totalGamesQ.rows[0].c) || 0,
+      total_teams: Number(totalTeamsQ.rows[0].c) || 0,
       total_points: Number(totalScoresQ.rows[0].s) || 0,
       leaders_wins,
       leaders_avg,
-      leaders_places
+      leaders_places,
+      latest_games: latestGamesQ.rows.map((g) => ({ id: g.id, name: g.name, event_date: g.event_date || null })),
+      global_ranking
     };
   },
 
