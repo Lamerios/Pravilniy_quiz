@@ -83,10 +83,12 @@ app.get('/health', async (req, res) => {
 import templatesRouter from './routes/templates';
 import teamsRouter from './routes/teams';
 import gamesRouter from './routes/games';
+import publicRouter from './routes/public';
 
 app.use('/api/templates', templatesRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/games', gamesRouter);
+app.use('/api/public', publicRouter);
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
