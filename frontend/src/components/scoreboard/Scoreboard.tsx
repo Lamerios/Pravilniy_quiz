@@ -122,7 +122,8 @@ const Scoreboard: React.FC = () => {
 
   useEffect(() => {
     if (!Number.isFinite(gameId)) return;
-    const socket: Socket = socketIO(process.env.REACT_APP_API_URL || 'http://localhost:5001', { transports: ['websocket'] });
+    const socketBase = process.env.REACT_APP_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+    const socket: Socket = socketIO(socketBase, { transports: ['websocket'] });
     socket.emit('join-game', gameId);
     const handleScores = (updated: RoundScore[]) => setScores(updated);
     socket.on('scores-updated', handleScores);
@@ -168,7 +169,7 @@ const Scoreboard: React.FC = () => {
                 <div className="leader-info">
                   <div className="leader-team">
                     {participant.team?.logo_path ? (
-                      <img alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${participant.team.logo_path}`} />
+                      <img alt="logo" src={`/uploads/${participant.team.logo_path}`} />
                     ) : null}
                     <strong>{participant.team?.name || `Команда #${participant.team_id}`}</strong>
                   </div>
@@ -211,7 +212,7 @@ const Scoreboard: React.FC = () => {
                     <td>
                       <div className="team-cell">
                         {p.team?.logo_path ? (
-                          <img className="team-logo-small" alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${p.team.logo_path}`} />
+                          <img className="team-logo-small" alt="logo" src={`/uploads/${p.team.logo_path}`} />
                         ) : null}
                         <span className="team-name-text">{p.team?.name || `Команда #${p.team_id}`}</span>
                       </div>

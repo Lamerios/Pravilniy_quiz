@@ -91,10 +91,21 @@ export const statsService = {
         const teamName = tQ.rows[0]?.name || `Команда #${teamId}`;
         let total = 0;
         const key: number[] = [];
-        for (const rn of roundNumbers) {
-          const val = byTeamRound.get(`${teamId}:${rn}`) || 0;
-          total += val;
-          key.push(val);
+        if (roundNumbers.length > 0) {
+          for (const rn of roundNumbers) {
+            const val = byTeamRound.get(`${teamId}:${rn}`) || 0;
+            total += val;
+            key.push(val);
+          }
+        } else {
+          // Фолбек: если у игры нет template_rounds, суммируем напрямую по round_scores
+          const sums = scoresQ.rows.filter(r => r.team_id === teamId).map(r => Number(r.score) || 0);
+          total = sums.reduce((a, b) => a + b, 0);
+          // ключ используем в порядке поступления раундов (может быть пустой)
+          key.push(...scoresQ.rows
+            .filter(r => r.team_id === teamId)
+            .sort((a,b)=>a.round_number-b.round_number)
+            .map(r => Number(r.score) || 0));
         }
         // сортировка: total, затем с конца key (последний раунд выше при равенстве)
         rows.push({ team_id: teamId, team_name: teamName, total, key });
@@ -208,10 +219,20 @@ export const statsService = {
       for (const id of teamIds) {
         let total = 0;
         const key: number[] = [];
-        for (const rn of roundNumbers) {
-          const val = byTeamRound.get(`${id}:${rn}`) || 0;
-          total += val;
-          key.push(val);
+        if (roundNumbers.length > 0) {
+          for (const rn of roundNumbers) {
+            const val = byTeamRound.get(`${id}:${rn}`) || 0;
+            total += val;
+            key.push(val);
+          }
+        } else {
+          // Фолбек: нет template_rounds — суммируем по round_scores
+          const sums = scoresQ.rows.filter(r => r.team_id === id).map(r => Number(r.score) || 0);
+          total = sums.reduce((a, b) => a + b, 0);
+          key.push(...scoresQ.rows
+            .filter(r => r.team_id === id)
+            .sort((a,b)=>a.round_number-b.round_number)
+            .map(r => Number(r.score) || 0));
         }
         rows.push({ team_id: id, total, key });
       }

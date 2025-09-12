@@ -1,4 +1,4 @@
-и попробовать запустить/**
+/**
  * Database initializer
  * Runs backend/src/db/init.sql once (idempotent via existence check)
  */

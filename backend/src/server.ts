@@ -22,17 +22,27 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
+// Setup CORS origins (support multiple origins in dev)
+const defaultCorsOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+const envCors = process.env.CORS_ORIGIN || process.env.CORS_ORIGINS; // allow either var
+const allowedOrigins = envCors
+  ? envCors.split(',').map((s) => s.trim()).filter(Boolean)
+  : defaultCorsOrigins;
+
 // Setup Socket.IO
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT"]
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  origin: allowedOrigins,
   credentials: true
 }));
 
