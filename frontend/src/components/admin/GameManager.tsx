@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Game, RoundScore, TemplateRound } from '../../../../shared/types';
 import { apiClient } from '../../services/apiClient.ts';
 import { io as socketIO, Socket } from 'socket.io-client';
+import './GameManager.css';
 
 interface GameManagerProps {
   gameId: number;
@@ -340,7 +341,7 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
             ) : null}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => window.open(`/board/${game.id}`, '_blank')}>Публичное табло</button>
+            <button className="btn btn-primary" onClick={() => window.open(`/board/${game.id}`, '_blank')}>📊 Публичное табло</button>
             <button className="btn btn-secondary" onClick={onBack}>← Назад</button>
           </div>
         </div>
@@ -389,9 +390,11 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
                               return (
                                 <tr key={p.id}>
                                   <td>{p.team?.name || `Команда #${p.team_id}`}</td>
-                                  <td>{p.table_number || '—'}</td>
-                                  <td><strong>{val}</strong></td>
-                                  <td>{rank > 0 ? rank : '—'}</td>
+                                  <td style={{ textAlign: 'center' }}>{p.table_number || '—'}</td>
+                                  <td style={{ textAlign: 'center' }}><strong>{val}</strong></td>
+                                  <td style={{ textAlign: 'center', fontWeight: rank === 1 ? 'bold' : 'normal', color: rank === 1 ? '#ffd700' : rank === 2 ? '#c0c0c0' : rank === 3 ? '#cd7f32' : 'inherit' }}>
+                                    {rank > 0 ? rank : '—'}
+                                  </td>
                                 </tr>
                               );
                             })}

@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom';
 import { Game, RoundScore } from '../../../../shared/types';
 import { apiClient } from '../../services/apiClient.ts';
 import { io as socketIO, Socket } from 'socket.io-client';
+import './Scoreboard.css';
 
 const Scoreboard: React.FC = () => {
   const params = useParams();
@@ -132,19 +133,19 @@ const Scoreboard: React.FC = () => {
   }, [gameId]);
 
   if (!Number.isFinite(gameId)) {
-    return <div className="error"><p>Некорректный идентификатор игры</p></div>;
+    return <div className="scoreboard-error"><h2>Некорректный идентификатор игры</h2></div>;
   }
 
   if (loading) {
-    return <div className="loading"><p>Загрузка табло...</p></div>;
+    return <div className="scoreboard-loading"></div>;
   }
 
   if (error) {
-    return <div className="error"><p>{error}</p></div>;
+    return <div className="scoreboard-error"><h2>{error}</h2></div>;
   }
 
   if (!game) {
-    return <div className="error"><p>Игра не найдена</p></div>;
+    return <div className="scoreboard-error"><h2>Игра не найдена</h2></div>;
   }
 
   const roundNumbers = rounds.map(r => r.round_number);
@@ -157,23 +158,23 @@ const Scoreboard: React.FC = () => {
       </header>
 
       {/* Leaders */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>
+      <div className="leaders-grid">
         {leaders.map(({ place, participant, total }) => {
           const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉';
-          const bg = place === 1 ? '#fff7d6' : place === 2 ? '#f0f4ff' : '#fff0f0';
           return (
-            <div key={participant.id} className="card" style={{ background: bg }}>
+            <div key={participant.id} className="leader-card">
               <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ fontSize: 28 }}>{medal}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="leader-medal">{medal}</div>
+                <div className="leader-info">
+                  <div className="leader-team">
                     {participant.team?.logo_path ? (
-                      <img alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${participant.team.logo_path}`} style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4 }} />
+                      <img alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${participant.team.logo_path}`} />
                     ) : null}
                     <strong>{participant.team?.name || `Команда #${participant.team_id}`}</strong>
                   </div>
-                  <div className="muted" style={{ marginTop: 4 }}>
-                    Стол: {participant.table_number || '—'} • Итого: {total}
+                  <div className="leader-details">
+                    <span>Стол: {participant.table_number || '—'}</span>
+                    <span>Итого: {total}</span>
                   </div>
                 </div>
               </div>
@@ -182,38 +183,46 @@ const Scoreboard: React.FC = () => {
         })}
       </div>
 
-      <div className="card">
+      <div className="card scoreboard-table">
         <div className="card-body">
           <div className="table" style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left' }}>Место</th>
+                  <th style={{ textAlign: 'center', width: '50px' }} title="Место">🏆</th>
                   <th style={{ textAlign: 'left' }}>Команда</th>
-                  <th style={{ textAlign: 'left' }}>Номер стола</th>
-                  <th style={{ textAlign: 'left' }}>Участники</th>
+                  <th style={{ textAlign: 'center', width: '50px' }} title="Номер стола">🪑</th>
+                  <th style={{ textAlign: 'center', width: '60px' }} title="Участники">👥</th>
                   {roundNumbers.map(rn => (
-                    <th key={`r${rn}`} style={{ textAlign: 'left' }}>R{rn}</th>
+                    <th key={`r${rn}`} style={{ textAlign: 'center', minWidth: '60px' }}>Р{rn}</th>
                   ))}
-                  <th style={{ textAlign: 'left' }}>Итого</th>
+                  <th style={{ textAlign: 'center', minWidth: '80px' }}>Итого</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedTeams.map((p) => (
                   <tr key={p.id}>
-                    <td>{overallRanks[p.team_id]}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{overallRanks[p.team_id]}</td>
                     <td>
-                      {p.team?.logo_path ? (
-                        <img alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${p.team.logo_path}`} style={{ width: 24, height: 24, objectFit: 'cover', borderRadius: 4, marginRight: 6, verticalAlign: 'middle' }} />
-                      ) : null}
-                      <strong>{p.team?.name || `Команда #${p.team_id}`}</strong>
+                      <div className="team-cell">
+                        {p.team?.logo_path ? (
+                          <img className="team-logo-small" alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${p.team.logo_path}`} />
+                        ) : null}
+                        <span className="team-name-text">{p.team?.name || `Команда #${p.team_id}`}</span>
+                      </div>
                     </td>
-                    <td>{p.table_number || '—'}</td>
-                    <td>{(p as any).participants_count ?? '—'}</td>
-                    {roundNumbers.map(rn => (
-                      <td key={`c${p.id}_${rn}`}>{Number(byRound[rn]?.[p.team_id] || 0)}</td>
-                    ))}
-                    <td><strong>{totalsByTeam[p.team_id] || 0}</strong></td>
+                    <td style={{ textAlign: 'center' }}>{p.table_number || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>{(p as any).participants_count ?? '—'}</td>
+                    {roundNumbers.map(rn => {
+                      const score = Number(byRound[rn]?.[p.team_id] || 0);
+                      // Найдём лучший результат в раунде
+                      const roundScores = game.participants?.map(part => Number(byRound[rn]?.[part.team_id] || 0)) || [];
+                      const bestScore = Math.max(...roundScores);
+                      const isBest = score === bestScore && score > 0;
+                      const className = `score-cell ${score > 0 ? 'positive' : score < 0 ? 'negative' : 'zero'} ${isBest ? 'best-score' : ''}`;
+                      return <td key={`c${p.id}_${rn}`} className={className} style={{ textAlign: 'center' }}>{score}</td>;
+                    })}
+                    <td className="total-cell" style={{ textAlign: 'center' }}>{totalsByTeam[p.team_id] || 0}</td>
                   </tr>
                 ))}
               </tbody>
