@@ -5,12 +5,12 @@
 
 import React, { useState } from 'react';
 import { GameTemplate, Game } from '../../../../shared/types';
-import TeamsManager from './TeamsManager.tsx';
-import TemplateList from './TemplateList.tsx';
-import TemplateForm from './TemplateForm.tsx';
-import GameList from './GameList.tsx';
-import GameForm from './GameForm.tsx';
-import GameManager from './GameManager.tsx';
+import TeamsManager from './TeamsManager';
+import TemplateList from './TemplateList';
+import TemplateForm from './TemplateForm';
+import GameList from './GameList';
+import GameForm from './GameForm';
+import GameManager from './GameManager';
 import './AdminPanel.css';
 
 type AdminView = 'templates' | 'teams' | 'games';
@@ -125,7 +125,7 @@ export const AdminPanel: React.FC = () => {
       case 'create':
         return (
           <GameForm
-            onSave={(game) => {
+            onSave={(game: Game) => {
               console.log('Game saved:', game);
               setGameMode('list');
             }}
@@ -151,7 +151,7 @@ export const AdminPanel: React.FC = () => {
         return (
           <GameList
             onCreateGame={() => setGameMode('create')}
-            onViewGame={(game) => {
+            onViewGame={(game: Game) => {
               setSelectedGame(game);
               setGameMode('view');
             }}

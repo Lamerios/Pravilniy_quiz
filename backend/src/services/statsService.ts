@@ -29,6 +29,9 @@ export interface TeamProfileResponse {
   avg_points: number;
   placements: { first: number; second: number; third: number };
   recent_games: Array<{ game_id: number; game_name: string; total: number; place: number; event_date: string | null }>;
+  round_stats?: Array<{ round_number: number; avg_score: number }>;
+  h2h?: Array<{ opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>;
+  table_stats?: Array<{ table_number: string; games: number; avg_place: number }>;
 }
 
 export const statsService = {
@@ -66,6 +69,10 @@ export const statsService = {
     const totalsByTeam: Map<number, { team_id: number; team_name: string; total: number; games: number }> = new Map();
     const placeSumByTeam: Map<number, { sum: number; games: number }> = new Map();
 
+    // Head-to-Head и статистика по столам
+    const h2h: Map<number, { opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }> = new Map();
+    const tableAgg: Map<string, { sumPlace: number; games: number }> = new Map();
+
     for (const g of gamesQ.rows) {
       const roundsQ = await database.query(
         'SELECT tr.round_number AS rn FROM template_rounds tr JOIN games gg ON gg.template_id = tr.template_id WHERE gg.id = $1 ORDER BY tr.round_number ASC',
@@ -91,21 +98,14 @@ export const statsService = {
         const teamName = tQ.rows[0]?.name || `Команда #${teamId}`;
         let total = 0;
         const key: number[] = [];
-        if (roundNumbers.length > 0) {
-          for (const rn of roundNumbers) {
-            const val = byTeamRound.get(`${teamId}:${rn}`) || 0;
-            total += val;
-            key.push(val);
-          }
-        } else {
-          // Фолбек: если у игры нет template_rounds, суммируем напрямую по round_scores
-          const sums = scoresQ.rows.filter(r => r.team_id === teamId).map(r => Number(r.score) || 0);
-          total = sums.reduce((a, b) => a + b, 0);
-          // ключ используем в порядке поступления раундов (может быть пустой)
-          key.push(...scoresQ.rows
-            .filter(r => r.team_id === teamId)
-            .sort((a,b)=>a.round_number-b.round_number)
-            .map(r => Number(r.score) || 0));
+        for (const rn of roundNumbers) {
+          const val = byTeamRound.get(`${teamId}:${rn}`) || 0;
+          total += val;
+          key.push(val);
+        }
+        // Debug: log total for specific teams
+        if (teamId === 7 || teamId === 8) {
+          console.log(`Game ${g.id}: Team ${teamId} total=${total}, rounds=${roundNumbers.length}, key=${key.join(',')}`);
         }
         // сортировка: total, затем с конца key (последний раунд выше при равенстве)
         rows.push({ team_id: teamId, team_name: teamName, total, key });
@@ -157,11 +157,24 @@ export const statsService = {
     const leaders_wins = Array.from(leadersWins.values()).sort((a, b) => b.wins - a.wins).slice(0, 10);
     const leaders_places = Array.from(leadersPlaces.values()).sort((a, b) => b.first_places - a.first_places || b.second_places - a.second_places || b.third_places - a.third_places).slice(0, 10);
 
+    // Debug: log totalsByTeam before mapping
+    console.log('totalsByTeam size:', totalsByTeam.size);
+    const firstTeam = Array.from(totalsByTeam.values())[0];
+    if (firstTeam) {
+      console.log('First team in totalsByTeam:', firstTeam);
+    }
+    
     const global_ranking = Array.from(totalsByTeam.values()).map((t) => {
       const ps = placeSumByTeam.get(t.team_id) || { sum: 0, games: 0 };
       const avg_place = ps.games > 0 ? Number((ps.sum / ps.games).toFixed(2)) : 0;
       const avg_points = t.games > 0 ? Number((t.total / t.games).toFixed(2)) : 0;
       const lp = leadersPlaces.get(t.team_id) || { first_places: 0, second_places: 0, third_places: 0, team_id: t.team_id, team_name: t.team_name };
+      
+      // Debug specific teams
+      if (t.team_id === 7 || t.team_id === 8) {
+        console.log(`Final for team ${t.team_id}: total=${t.total}, games=${t.games}, avg=${avg_points}`);
+      }
+      
       return {
         team_id: t.team_id,
         team_name: t.team_name,
@@ -199,6 +212,15 @@ export const statsService = {
     let first = 0, second = 0, third = 0;
     const recent: Array<{ game_id: number; game_name: string; total: number; place: number; event_date: string | null }> = [];
 
+    // агрегаты по раундам
+    const roundAgg = new Map<number, { sum: number; count: number }>();
+    
+    // Head-to-Head агрегация
+    const h2h = new Map<number, { opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>();
+    
+    // Статистика по столам
+    const tableAgg = new Map<string, { sumPlace: number; games: number }>();
+
     for (const g of gamesQ.rows) {
       const roundsQ = await database.query(
         'SELECT tr.round_number AS rn FROM template_rounds tr JOIN games gg ON gg.template_id = tr.template_id WHERE gg.id = $1 ORDER BY tr.round_number ASC',
@@ -219,20 +241,10 @@ export const statsService = {
       for (const id of teamIds) {
         let total = 0;
         const key: number[] = [];
-        if (roundNumbers.length > 0) {
-          for (const rn of roundNumbers) {
-            const val = byTeamRound.get(`${id}:${rn}`) || 0;
-            total += val;
-            key.push(val);
-          }
-        } else {
-          // Фолбек: нет template_rounds — суммируем по round_scores
-          const sums = scoresQ.rows.filter(r => r.team_id === id).map(r => Number(r.score) || 0);
-          total = sums.reduce((a, b) => a + b, 0);
-          key.push(...scoresQ.rows
-            .filter(r => r.team_id === id)
-            .sort((a,b)=>a.round_number-b.round_number)
-            .map(r => Number(r.score) || 0));
+        for (const rn of roundNumbers) {
+          const val = byTeamRound.get(`${id}:${rn}`) || 0;
+          total += val;
+          key.push(val);
         }
         rows.push({ team_id: id, total, key });
       }
@@ -250,16 +262,75 @@ export const statsService = {
       totalPoints += me.total;
       if (place === 1) first += 1; else if (place === 2) second += 1; else if (place === 3) third += 1;
       if (recent.length < 10) recent.push({ game_id: g.id, game_name: g.name, total: me.total, place, event_date: g.event_date || null });
+
+      // накапливаем по раундам значения этой команды
+      for (let i = 0; i < roundNumbers.length; i++) {
+        const rn = roundNumbers[i];
+        const val = me.key[i] || 0;
+        const agg = roundAgg.get(rn) || { sum: 0, count: 0 };
+        agg.sum += val;
+        agg.count += 1;
+        roundAgg.set(rn, agg);
+      }
+
+      // Head-to-Head: подготовим места всех команд в этой игре
+      const placesMap = new Map<number, number>();
+      rows.forEach((r, idx) => placesMap.set(r.team_id, idx + 1));
+      for (const r of rows) {
+        if (r.team_id === teamId) continue;
+        const oppId = r.team_id;
+        const oppPlace = placesMap.get(oppId) || 0;
+        const myPlace = place;
+        const tQn = await database.query('SELECT name FROM teams WHERE id = $1', [oppId]);
+        const oppName = tQn.rows[0]?.name || `Команда #${oppId}`;
+        const rec = h2h.get(oppId) || { opponent_id: oppId, opponent_name: oppName, games: 0, wins: 0, losses: 0, draws: 0 };
+        rec.games += 1;
+        if (myPlace < oppPlace) rec.wins += 1; else if (myPlace > oppPlace) rec.losses += 1; else rec.draws += 1;
+        h2h.set(oppId, rec);
+      }
+
+      // Таблицы: номер стола для нашей команды
+      const tRow = await database.query('SELECT table_number FROM game_participants WHERE game_id = $1 AND team_id = $2 LIMIT 1', [g.id, teamId]);
+      const tableNum = (tRow.rows[0]?.table_number as string | null) || '—';
+      const tAgg = tableAgg.get(tableNum) || { sumPlace: 0, games: 0 };
+      tAgg.sumPlace += place;
+      tAgg.games += 1;
+      tableAgg.set(tableNum, tAgg);
     }
 
     const avg = gamesPlayed > 0 ? Number((totalPoints / gamesPlayed).toFixed(2)) : 0;
+    // формируем средние по раундам
+    let round_stats = Array.from(roundAgg.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([round_number, v]) => ({ round_number, avg_score: v.count > 0 ? Number((v.sum / v.count).toFixed(2)) : 0 }));
+
+    // Fallback: если по какой-то причине агрегация дала нули, считаем напрямую SQL'ом
+    const hasPositive = round_stats.some((r) => r.avg_score > 0);
+    if (!hasPositive) {
+      const rq = await database.query(
+        'SELECT round_number AS rn, AVG(score)::float AS avg FROM round_scores WHERE team_id = $1 GROUP BY round_number ORDER BY rn',
+        [teamId]
+      );
+      round_stats = rq.rows.map((r) => ({ round_number: Number(r.rn), avg_score: Number(Number(r.avg).toFixed(2)) }));
+    }
+
+    // формируем Head-to-Head и статистику по столам
+    const h2hArr: Array<{ opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }> = Array.from(h2h.values()).map((v) => ({ ...v })).sort((a, b) => (b.games || 0) - (a.games || 0)).slice(0, 10);
+    const tableEntries: Array<[string, { sumPlace: number; games: number }]> = Array.from(tableAgg.entries());
+    const table_stats: Array<{ table_number: string; games: number; avg_place: number }> = tableEntries
+      .map(([table_number, v]) => ({ table_number: String(table_number), games: Number(v.games) || 0, avg_place: v.games > 0 ? Number((v.sumPlace / v.games).toFixed(2)) : 0 }))
+      .sort((a: { table_number: string; games: number; avg_place: number }, b: { table_number: string; games: number; avg_place: number }) => (a.avg_place || 0) - (b.avg_place || 0));
+
     return {
       team,
       games_played: gamesPlayed,
       total_points: totalPoints,
       avg_points: avg,
       placements: { first, second, third },
-      recent_games: recent
+      recent_games: recent,
+      round_stats,
+      h2h: h2hArr,
+      table_stats
     };
   }
   ,

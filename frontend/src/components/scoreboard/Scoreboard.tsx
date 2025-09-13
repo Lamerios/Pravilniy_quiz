@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Game, RoundScore } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient.ts';
+import { apiClient } from '../../services/apiClient';
 import { io as socketIO, Socket } from 'socket.io-client';
 import './Scoreboard.css';
 

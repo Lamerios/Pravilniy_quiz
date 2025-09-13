@@ -25,7 +25,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # App artifacts
-COPY --from=builder /usr/src/app/backend/dist ./dist
+COPY --from=builder /usr/src/app/dist ./dist
 
 # Create directories used by the app (mounted as volumes in compose)
 RUN mkdir -p /usr/src/uploads /usr/src/logs
@@ -38,6 +38,6 @@ ENV HOST=0.0.0.0 \
     UPLOAD_PATH=/usr/src/uploads \
     LOG_PATH=/usr/src/logs
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/backend/src/server.js"]
 
 

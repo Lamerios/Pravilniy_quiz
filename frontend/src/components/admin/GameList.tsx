@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Game } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient.ts';
+import { apiClient } from '../../services/apiClient';
 
 interface GameListProps {
   onCreateGame: () => void;

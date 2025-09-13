@@ -5,8 +5,8 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Game, RoundScore, TemplateRound } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient.ts';
+import { Game, RoundScore, TemplateRound, GameParticipant } from '../../../../shared/types';
+import { apiClient } from '../../services/apiClient';
 import { io as socketIO, Socket } from 'socket.io-client';
 import './GameManager.css';
 
@@ -72,21 +72,21 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
       const localParticipants = g.participants || [];
       const inputs: ScoreInputs = {};
       const byRound: Record<number, RoundScore[]> = {};
-      sc.forEach(s => {
+      sc.forEach((s: RoundScore) => {
         if (!byRound[s.round_number]) byRound[s.round_number] = [];
         byRound[s.round_number].push(s);
       });
-      const roundList = g.template?.rounds?.map(r => r.round_number) || [];
-      const maxRound = roundList.length > 0 ? Math.max(...roundList) : (sc.length > 0 ? Math.max(...sc.map(s => s.round_number)) : Math.max(1, g.current_round || 1));
+      const roundList = g.template?.rounds?.map((r: TemplateRound) => r.round_number) || [];
+      const maxRound = roundList.length > 0 ? Math.max(...roundList) : (sc.length > 0 ? Math.max(...sc.map((s: RoundScore) => s.round_number)) : Math.max(1, g.current_round || 1));
       const maxByRound: Record<number, number | null> = {};
-      (g.template?.rounds || []).forEach(r => { maxByRound[r.round_number] = typeof r.max_score === 'number' ? r.max_score : null; });
+      (g.template?.rounds || []).forEach((r: TemplateRound) => { maxByRound[r.round_number] = typeof r.max_score === 'number' ? r.max_score : null; });
       const editing: EditingState = {};
       const savedFlags: SavedFlagState = {};
       for (let r = 1; r <= maxRound; r++) {
         inputs[r] = {};
         const roundScores = byRound[r] || [];
         const hasAny = roundScores.length > 0;
-        localParticipants.forEach(p => {
+        localParticipants.forEach((p: GameParticipant) => {
           const found = roundScores.find(s => s.team_id === p.team_id);
           let val = found ? Number(found.score) : NaN;
           if (!Number.isFinite(val)) val = 0;

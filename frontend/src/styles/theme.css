@@ -15,6 +15,11 @@
   --purple-700: #6b21a8;
   --purple-800: #581c87;
   --purple-900: #3b0764;
+
+  /* Design Prompt Primary */
+  --primary-600: #7c3aed; /* Фиолетовый основной */
+  --primary-500: #8b5cf6; /* Фиолетовый светлее */
+  --primary-400: #a78bfa; /* Фиолетовый акцент */
   
   /* Complementary Colors */
   --violet-400: #a78bfa;
@@ -35,10 +40,10 @@
   --gray-900: #111827;
   
   /* Semantic Colors */
-  --color-primary: var(--purple-600);
+  --color-primary: var(--primary-600);
   --color-primary-hover: var(--purple-700);
   --color-primary-light: var(--purple-100);
-  --color-secondary: var(--violet-500);
+  --color-secondary: var(--primary-500);
   --color-accent: var(--pink-400);
   
   --color-success: #10b981;
@@ -51,8 +56,8 @@
   --bg-secondary: var(--gray-50);
   --bg-tertiary: var(--purple-50);
   --bg-dark: var(--gray-900);
-  --bg-gradient: linear-gradient(135deg, var(--purple-600) 0%, var(--violet-500) 100%);
-  --bg-gradient-light: linear-gradient(135deg, var(--purple-100) 0%, var(--violet-400) 100%);
+  --bg-gradient: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%);
+  --bg-gradient-light: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
   
   /* Text Colors */
   --text-primary: var(--gray-900);

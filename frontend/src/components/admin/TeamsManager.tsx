@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Team } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient.ts';
+import { apiClient } from '../../services/apiClient';
 
 const TeamsManager: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);

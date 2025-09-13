@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../../services/apiClient.ts';
+import { apiClient } from 'services/apiClient';
 import '../scoreboard/Scoreboard.css';
+import { Card, Avatar } from 'ui';
 
 const TeamsDirectory: React.FC = () => {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(15);
   const [data, setData] = useState<any>({ items: [], page: 1, total_pages: 1 });
 
   useEffect(() => {
@@ -15,13 +16,36 @@ const TeamsDirectory: React.FC = () => {
     })();
   }, [page, limit]);
 
+  // Разбить по колонкам: 3 колонки, по 5 команд в каждой
+  const columns: any[][] = useMemo(() => {
+    const items: any[] = Array.isArray(data.items) ? data.items.slice(0, 15) : [];
+    const result: any[][] = [[], [], []];
+    for (let i = 0; i < items.length; i++) {
+      const colIndex = Math.floor(i / 5); // 0,1,2
+      if (colIndex < 3) result[colIndex].push(items[i]);
+    }
+    return result;
+  }, [data.items]);
+
   return (
     <div>
-      <ul>
-        {data.items.map((t: any) => (
-          <li key={t.id}><Link to={`/team/${t.id}`}>{t.name}</Link></li>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-lg)' }}>
+        {columns.map((col, cIdx) => (
+          <div key={`col-${cIdx}`} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            {col.map((t: any) => (
+              <Card key={t.id}>
+                <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Avatar src={t.logo_path || t.logo} name={t.name} size={40} rounded={10} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Link to={`/team/${t.id}`} style={{ fontWeight: 600 }}>{t.name}</Link>
+                    {t.created_at ? (<span className="muted" style={{ fontSize: 12 }}>Создана: {new Date(t.created_at).toLocaleDateString()}</span>) : null}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         ))}
-      </ul>
+      </div>
       <div className="mt-2" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <button className="btn btn-secondary" disabled={page<=1} onClick={() => setPage(page-1)}>Назад</button>
         <div className="muted">Стр. {data.page} / {data.total_pages}</div>
@@ -64,6 +88,39 @@ const Home: React.FC = () => {
     const totals = last.totalsByTeam as Record<number, number>;
     return [...last.game.participants].sort((a: any, b: any) => (totals[b.team_id] || 0) - (totals[a.team_id] || 0));
   }, [last]);
+
+  const topGold = useMemo(() => {
+    const list = (stats?.leaders_places || []) as any[];
+    return [...list].sort((a, b) => (b.first_places || 0) - (a.first_places || 0)).slice(0, 5);
+  }, [stats]);
+
+  const topSilver = useMemo(() => {
+    const list = (stats?.leaders_places || []) as any[];
+    return [...list].sort((a, b) => (b.second_places || 0) - (a.second_places || 0)).slice(0, 5);
+  }, [stats]);
+
+  const topBronze = useMemo(() => {
+    const list = (stats?.leaders_places || []) as any[];
+    return [...list].sort((a, b) => (b.third_places || 0) - (a.third_places || 0)).slice(0, 5);
+  }, [stats]);
+
+  const latestGamesColumns: any[][] = useMemo(() => {
+    const items: any[] = Array.isArray(stats?.latest_games) ? (stats!.latest_games as any[]).slice(0, 15) : [];
+    const cols: any[][] = [[], [], []];
+    // Распределение по колонкам "по кругу" (баланс 4/3/3, 5/5/5 и т.д.), максимум 5 на колонку
+    let col = 0;
+    for (const it of items) {
+      // найдём следующую колонку с местом (<5)
+      let attempts = 0;
+      while (cols[col].length >= 5 && attempts < 3) {
+        col = (col + 1) % 3;
+        attempts++;
+      }
+      if (cols[col].length < 5) cols[col].push(it);
+      col = (col + 1) % 3;
+    }
+    return cols;
+  }, [stats]);
 
   if (loading) return <div className="loading"><p>Загрузка...</p></div>;
   if (error) return <div className="error"><p>{error}</p></div>;
@@ -124,37 +181,38 @@ const Home: React.FC = () => {
           </div>
         ) : null}
 
-        {/* Leaders */}
+        {/* Лидеры по местам: 3 блока после общего рейтинга */}
         {stats ? (
           <div className="card" style={{ marginTop: 16 }}>
             <div className="card-body">
-              <div className="card-grid">
+              <div className="section-header"><h3>Лидеры по местам</h3></div>
+              <div className="card-grid" style={{ marginTop: 12 }}>
                 <div className="card">
                   <div className="card-body">
-                    <h3>Лидеры по победам</h3>
+                    <h4>🥇 Золото</h4>
                     <ul>
-                      {stats.leaders_wins?.map((t: any) => (
-                        <li key={t.team_id}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — {t.wins}</li>
+                      {topGold.map((t: any) => (
+                        <li key={`gold-${t.team_id}`}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — {t.first_places}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
                 <div className="card">
                   <div className="card-body">
-                    <h3>Лучший средний итог</h3>
+                    <h4>🥈 Серебро</h4>
                     <ul>
-                      {stats.leaders_avg?.map((t: any) => (
-                        <li key={t.team_id}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — {t.avg_total}</li>
+                      {topSilver.map((t: any) => (
+                        <li key={`silver-${t.team_id}`}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — {t.second_places}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
                 <div className="card">
                   <div className="card-body">
-                    <h3>Лидеры по местам</h3>
+                    <h4>🥉 Бронза</h4>
                     <ul>
-                      {stats.leaders_places?.map((t: any) => (
-                        <li key={t.team_id}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — 🥇 {t.first_places} · 🥈 {t.second_places} · 🥉 {t.third_places}</li>
+                      {topBronze.map((t: any) => (
+                        <li key={`bronze-${t.team_id}`}><Link to={`/team/${t.team_id}`}>{t.team_name}</Link> — {t.third_places}</li>
                       ))}
                     </ul>
                   </div>
@@ -164,26 +222,34 @@ const Home: React.FC = () => {
           </div>
         ) : null}
 
-        {/* Latest games */}
-        {stats?.latest_games?.length ? (
-          <div className="card" style={{ marginTop: 16 }}>
-            <div className="card-body">
-              <h3>Последние игры</h3>
-              <ul>
-                {stats.latest_games.map((g: any) => (
-                  <li key={g.id}><Link to={`/board/${g.id}`}>{g.name}</Link></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : null}
-
-        {/* All teams paginated - server-side */}
+        {/* All teams paginated - server-side (подняли выше последних игр) */}
         {true ? (
           <div className="card" style={{ marginTop: 16 }}>
             <div className="card-body">
               <h3>Все команды</h3>
               <TeamsDirectory />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Latest games */}
+        {stats?.latest_games?.length ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="card-body">
+              <h3>Последние игры</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-lg)', marginTop: 12 }}>
+                {latestGamesColumns.map((col, cIdx) => (
+                  <div key={`lg-col-${cIdx}`} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                    {col.map((g: any) => (
+                      <Card key={g.id}>
+                        <div className="card-body">
+                          <Link to={`/board/${g.id}`}>{g.name}</Link>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : null}

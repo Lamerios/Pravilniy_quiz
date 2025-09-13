@@ -8,10 +8,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 
 // Import components
-import AdminPanel from './components/admin/AdminPanel.tsx';
-import Scoreboard from './components/scoreboard/Scoreboard.tsx';
-import Home from './components/home/Home.tsx';
-import TeamProfile from './components/team/TeamProfile.tsx';
+import AdminPanel from 'components/admin/AdminPanel';
+import Scoreboard from 'components/scoreboard/Scoreboard';
+import Home from 'components/home/Home';
+import TeamProfile from 'components/team/TeamProfile';
+import Showcase from 'components/Showcase';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Routes>
             {/* Public Home */}
             <Route path="/" element={<Home />} />
+            <Route path="/demo" element={<Showcase />} />
             
             {/* Admin panel routes */}
             <Route path="/admin" element={<AdminPanel />} />

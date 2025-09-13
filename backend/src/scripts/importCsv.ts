@@ -52,6 +52,31 @@ async function ensureImportTemplate(): Promise<number> {
   return templateId;
 }
 
+async function resolveTemplateId(args: string[]): Promise<number> {
+  // Priority: --template-id, then --template-name, otherwise ensureImportTemplate()
+  const idIdx = args.findIndex((a) => a === '--template-id');
+  if (idIdx !== -1 && args[idIdx + 1]) {
+    const tplId = Number(args[idIdx + 1]);
+    if (!Number.isFinite(tplId) || tplId <= 0) {
+      throw new Error('Invalid --template-id value');
+    }
+    const q = await database.query('SELECT id FROM game_templates WHERE id = $1', [tplId]);
+    if ((q.rowCount ?? 0) === 0) throw new Error(`Template with id=${tplId} not found`);
+    return tplId;
+  }
+
+  const nameIdx = args.findIndex((a) => a === '--template-name');
+  if (nameIdx !== -1 && args[nameIdx + 1]) {
+    const tplName = String(args[nameIdx + 1]).trim();
+    const q = await database.query('SELECT id FROM game_templates WHERE name = $1', [tplName]);
+    if ((q.rowCount ?? 0) === 0) throw new Error(`Template with name "${tplName}" not found`);
+    return q.rows[0].id as number;
+  }
+
+  // fallback to import template with relaxed max scores
+  return ensureImportTemplate();
+}
+
 async function upsertTeam(name: string): Promise<number> {
   const trimmed = normalizeTeamName(name);
   // case-insensitive only by case difference
@@ -100,7 +125,7 @@ async function run() {
   const args = process.argv.slice(2);
   const fileArgIndex = args.findIndex((a) => a === '--file');
   if (fileArgIndex === -1 || !args[fileArgIndex + 1]) {
-    console.error('Usage: ts-node src/scripts/importCsv.ts --file path/to/statistics.csv');
+    console.error('Usage: ts-node src/scripts/importCsv.ts --file path/to/statistics.csv [--template-id <id> | --template-name "Name"]');
     process.exit(1);
   }
   const filePath = path.resolve(process.cwd(), args[fileArgIndex + 1]);
@@ -109,7 +134,7 @@ async function run() {
     process.exit(1);
   }
 
-  const templateId = await ensureImportTemplate();
+  const templateId = await resolveTemplateId(args);
   const reportLines: string[] = ['date,source,team,reason,details'];
 
   const stream = fs.createReadStream(filePath);

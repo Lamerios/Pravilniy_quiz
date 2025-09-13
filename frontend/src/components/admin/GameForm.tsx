@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Game, GameTemplate, Team, CreateGameRequest } from '../../../../shared/types';
-import { apiClient } from '../../services/apiClient.ts';
+import { apiClient } from '../../services/apiClient';
 
 interface GameFormProps {
   onSave: (game: Game) => void;
