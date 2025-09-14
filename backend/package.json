@@ -12,7 +12,10 @@
     "db:init:admin": "ts-node src/db/adminInit.ts",
     "import:csv": "ts-node src/scripts/importCsv.ts",
     "verify:totals": "ts-node src/scripts/verifyTotals.ts",
-    "cleanup:imported": "ts-node src/scripts/cleanupImported.ts"
+    "cleanup:imported": "ts-node src/scripts/cleanupImported.ts",
+    "db:export": "ts-node src/scripts/exportDatabase.ts",
+    "db:export:selective": "ts-node src/scripts/selectiveExport.ts",
+    "db:import": "ts-node src/scripts/importDatabase.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
