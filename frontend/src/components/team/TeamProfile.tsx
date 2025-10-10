@@ -156,7 +156,7 @@ const TeamProfile: React.FC = () => {
     <Card>
       <div className="card-body">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <Avatar name={t.name} src={t.logo_path || t.logo} size={56} rounded={12} />
+          <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={56} rounded={12} />
           <div>
             <h2>{t.name}</h2>
             <div className="muted">Игр: {data.games_played}</div>

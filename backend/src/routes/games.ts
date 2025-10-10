@@ -7,7 +7,7 @@ import { gameService } from '../services/gameService';
 import { ApiError } from '../utils/ApiError';
 import { CreateGameRequest } from '../../../shared/types';
 import { io } from '../server';
-import { broadcastGameStatusChange, broadcastRoundChange, broadcastScoresUpdate } from '../services/socketService';
+import { broadcastGameStatusChange, broadcastRoundChange, broadcastScoresUpdate, broadcastGameUpdate } from '../services/socketService';
 
 const router = express.Router();
 
@@ -79,6 +79,11 @@ router.put('/:id/participants', async (req, res, next) => {
 
     const updates = req.body as { team_id: number; table_number: string | null }[];
     const result = await gameService.updateParticipants(id, updates);
+    // broadcast updated game payload for clients to re-render participants
+    const game = await gameService.getGameById(id);
+    if (game) {
+      broadcastGameUpdate(io, id, game);
+    }
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -136,6 +141,42 @@ router.get('/:id/scores', async (req, res, next) => {
     if (isNaN(id)) throw new ApiError('Invalid game ID', 400);
     const rows = await gameService.getScores(id);
     res.json({ success: true, data: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/games/:id/participants - Add participant (team) to game
+router.post('/:id/participants', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ApiError('Invalid game ID', 400);
+    const payload = req.body as { team_id: number; table_number?: string | null; participants_count?: number | null };
+    const row = await gameService.addParticipant(id, payload);
+    // after adding, broadcast updated game and scores
+    const game = await gameService.getGameById(id);
+    if (game) broadcastGameUpdate(io, id, game);
+    const scores = await gameService.getScores(id);
+    broadcastScoresUpdate(io, id, scores as any[]);
+    res.status(201).json({ success: true, data: row });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/games/:id/participants/:teamId - Remove participant (team) from game
+router.delete('/:id/participants/:teamId', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    const teamId = parseInt(req.params.teamId);
+    if (isNaN(id) || isNaN(teamId)) throw new ApiError('Invalid ids', 400);
+    await gameService.removeParticipant(id, teamId);
+    // broadcast updated game and scores after removal
+    const game = await gameService.getGameById(id);
+    if (game) broadcastGameUpdate(io, id, game);
+    const scores = await gameService.getScores(id);
+    broadcastScoresUpdate(io, id, scores as any[]);
+    res.json({ success: true, message: 'Participant removed' });
   } catch (error) {
     next(error);
   }

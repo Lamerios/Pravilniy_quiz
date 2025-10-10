@@ -122,8 +122,8 @@ const Scoreboard: React.FC = () => {
 
   useEffect(() => {
     if (!Number.isFinite(gameId)) return;
-    const socketBase = process.env.REACT_APP_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-    const socket: Socket = socketIO(socketBase, { transports: ['websocket'] });
+    const base = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const socket: Socket = base ? socketIO(base, { transports: ['websocket'] }) : socketIO({ transports: ['websocket'] });
     socket.emit('join-game', gameId);
     const handleScores = (updated: RoundScore[]) => setScores(updated);
     socket.on('scores-updated', handleScores);

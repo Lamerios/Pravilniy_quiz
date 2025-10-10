@@ -152,6 +152,104 @@ class GameService {
     }
   }
 
+  /**
+   * Add a participant (team) to a game
+   * If table_number provided, enforces uniqueness among non-empty labels
+   */
+  public async addParticipant(
+    gameId: number,
+    params: { team_id: number; table_number?: string | null; participants_count?: number | null }
+  ) {
+    const { team_id } = params;
+    if (!Number.isInteger(team_id)) {
+      throw new ApiError('team_id must be integer', 400);
+    }
+
+    const client = await database.getClient();
+    try {
+      await client.query('BEGIN');
+
+      // verify game exists
+      const g = await client.query('SELECT id FROM games WHERE id = $1', [gameId]);
+      if ((g.rowCount ?? 0) === 0) throw new ApiError('Game not found', 404);
+
+      // verify team exists
+      const t = await client.query('SELECT id FROM teams WHERE id = $1', [team_id]);
+      if ((t.rowCount ?? 0) === 0) throw new ApiError('Team not found', 404);
+
+      // ensure not already participant
+      const ex = await client.query('SELECT 1 FROM game_participants WHERE game_id = $1 AND team_id = $2', [gameId, team_id]);
+      if ((ex.rowCount ?? 0) > 0) throw new ApiError('Team already participates in this game', 400);
+
+      // validate table_number uniqueness if provided
+      const tableLabel = params.table_number === undefined || params.table_number === null || params.table_number === ''
+        ? null
+        : String(params.table_number).trim();
+      if (tableLabel) {
+        const dup = await client.query(
+          `SELECT 1 FROM game_participants WHERE game_id = $1 AND table_number = $2`,
+          [gameId, tableLabel]
+        );
+        if ((dup.rowCount ?? 0) > 0) {
+          throw new ApiError('Table labels must be unique', 400);
+        }
+      }
+
+      const participantsCount = params.participants_count === undefined ? null : (params.participants_count === null ? null : Number(params.participants_count));
+
+      // ensure column exists
+      await client.query('ALTER TABLE game_participants ADD COLUMN IF NOT EXISTS participants_count INTEGER');
+
+      // insert participant
+      const ins = await client.query(
+        `INSERT INTO game_participants (game_id, team_id, table_number, participants_count)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [gameId, team_id, tableLabel, participantsCount]
+      );
+
+      await client.query('COMMIT');
+
+      return ins.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new ApiError('Failed to add participant', 500, error);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Remove a participant (team) from a game
+   * Also removes that team's scores for the game
+   */
+  public async removeParticipant(gameId: number, teamId: number) {
+    if (!Number.isInteger(teamId)) throw new ApiError('Invalid team id', 400);
+
+    const client = await database.getClient();
+    try {
+      await client.query('BEGIN');
+
+      // ensure participant exists
+      const part = await client.query('SELECT id FROM game_participants WHERE game_id = $1 AND team_id = $2', [gameId, teamId]);
+      if ((part.rowCount ?? 0) === 0) throw new ApiError('Participant not found', 404);
+
+      // delete scores for this team in this game
+      await client.query('DELETE FROM round_scores WHERE game_id = $1 AND team_id = $2', [gameId, teamId]);
+
+      // delete participant row
+      await client.query('DELETE FROM game_participants WHERE game_id = $1 AND team_id = $2', [gameId, teamId]);
+
+      await client.query('COMMIT');
+      return { success: true };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new ApiError('Failed to remove participant', 500, error);
+    } finally {
+      client.release();
+    }
+  }
+
   // Iteration 4: Status
   public async updateStatus(gameId: number, status: 'created'|'active'|'finished'): Promise<Game> {
     if (!['created','active','finished'].includes(status)) {

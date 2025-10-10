@@ -196,7 +196,7 @@ const GameForm: React.FC<GameFormProps> = ({ onSave, onCancel }) => {
                   aria-label={`Команда ${team.name} ${selected ? 'выбрана' : 'не выбрана'}`}
                 >
                   {team.logo_path ? (
-                    <img className="team-logo-thumb" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${team.logo_path}`} alt={team.name} />
+                    <img className="team-logo-thumb" src={`/uploads/${team.logo_path}`} alt={team.name} />
                   ) : (
                     <div className="team-logo-thumb no-logo" aria-hidden="true">🖼️</div>
                   )}

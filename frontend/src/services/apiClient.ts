@@ -34,6 +34,11 @@ class ApiClient {
     // Request interceptor for logging
     this.client.interceptors.request.use(
       (config) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+        if (token) {
+          config.headers = config.headers || {};
+          (config.headers as any)['Authorization'] = `Bearer ${token}`;
+        }
         console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
@@ -50,10 +55,34 @@ class ApiClient {
         return response;
       },
       (error) => {
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) {
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('admin_token');
+              if (window.location.pathname.startsWith('/admin')) {
+                window.location.replace('/admin');
+              }
+            }
+          } catch {}
+        }
         console.error('API Response Error:', error.response?.data || error.message);
         return Promise.reject(error);
       }
     );
+  }
+
+  // ===================== Auth API =====================
+  async adminLogin(password: string): Promise<string> {
+    const resp: AxiosResponse<ApiResponse<{ token: string }>> = await this.client.post('/api/auth/login', { password });
+    const token = resp.data.data?.token;
+    if (!token) throw new Error('Не удалось получить токен');
+    if (typeof window !== 'undefined') localStorage.setItem('admin_token', token);
+    return token;
+  }
+
+  adminLogout(): void {
+    if (typeof window !== 'undefined') localStorage.removeItem('admin_token');
   }
 
   /**
@@ -291,6 +320,15 @@ class ApiClient {
       const message = error.response?.data?.error || 'Не удалось загрузить результаты';
       throw new Error(message);
     }
+  }
+
+  async addParticipant(gameId: number, payload: { team_id: number; table_number?: string | null; participants_count?: number | null }): Promise<any> {
+    const response: AxiosResponse<ApiResponse<any>> = await this.client.post(`/api/games/${gameId}/participants`, payload);
+    return response.data.data;
+  }
+
+  async removeParticipant(gameId: number, teamId: number): Promise<void> {
+    await this.client.delete(`/api/games/${gameId}/participants/${teamId}`);
   }
 
   // ===================== Public API =====================
