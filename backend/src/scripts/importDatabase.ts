@@ -157,7 +157,8 @@ class DatabaseImporter {
   /**
    * Очистка существующих данных
    */
-  private async clearExistingData(): Promise<void> {
+  // Сделаем публичным для вызова из CLI
+  async clearExistingData(): Promise<void> {
     console.log('🧹 Очищаем существующие данные...');
     
     const clearSQL = `

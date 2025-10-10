@@ -14,9 +14,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    image: quiz-game-backend:v1
     container_name: quiz-game-backend
     environment:
       NODE_ENV: production
@@ -43,9 +41,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: quiz-game-frontend:v1
     container_name: quiz-game-frontend
     ports:
       - "8080:80"

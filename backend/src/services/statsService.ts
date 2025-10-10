@@ -30,6 +30,8 @@ export interface TeamProfileResponse {
   placements: { first: number; second: number; third: number };
   recent_games: Array<{ game_id: number; game_name: string; total: number; place: number; event_date: string | null }>;
   round_stats?: Array<{ round_number: number; avg_score: number }>;
+  // Среднее место команды по каждому раунду среди всех игр
+  round_places?: Array<{ round_number: number; avg_place: number }>;
   h2h?: Array<{ opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>;
   table_stats?: Array<{ table_number: string; games: number; avg_place: number }>;
 }
@@ -214,6 +216,8 @@ export const statsService = {
 
     // агрегаты по раундам
     const roundAgg = new Map<number, { sum: number; count: number }>();
+    // агрегаты по местам в каждом раунде
+    const roundPlaceAgg = new Map<number, { sumPlace: number; count: number }>();
     
     // Head-to-Head агрегация
     const h2h = new Map<number, { opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>();
@@ -271,6 +275,18 @@ export const statsService = {
         agg.sum += val;
         agg.count += 1;
         roundAgg.set(rn, agg);
+
+        // вычисляем место команды в этом раунде (сравниваем только по текущему номеру раунда)
+        const roundEntries: Array<{ team_id: number; score: number }> = [];
+        for (const otherId of teamIds) {
+          roundEntries.push({ team_id: otherId, score: byTeamRound.get(`${otherId}:${rn}`) || 0 });
+        }
+        roundEntries.sort((a, b) => b.score - a.score);
+        const placeInRound = (roundEntries.findIndex((r) => r.team_id === teamId) + 1) || roundEntries.length;
+        const plAgg = roundPlaceAgg.get(rn) || { sumPlace: 0, count: 0 };
+        plAgg.sumPlace += placeInRound;
+        plAgg.count += 1;
+        roundPlaceAgg.set(rn, plAgg);
       }
 
       // Head-to-Head: подготовим места всех команд в этой игре
@@ -304,6 +320,11 @@ export const statsService = {
       .sort((a, b) => a[0] - b[0])
       .map(([round_number, v]) => ({ round_number, avg_score: v.count > 0 ? Number((v.sum / v.count).toFixed(2)) : 0 }));
 
+    // формируем среднее место по раундам
+    const round_places = Array.from(roundPlaceAgg.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([round_number, v]) => ({ round_number, avg_place: v.count > 0 ? Number((v.sumPlace / v.count).toFixed(2)) : 0 }));
+
     // Fallback: если по какой-то причине агрегация дала нули, считаем напрямую SQL'ом
     const hasPositive = round_stats.some((r) => r.avg_score > 0);
     if (!hasPositive) {
@@ -329,6 +350,7 @@ export const statsService = {
       placements: { first, second, third },
       recent_games: recent,
       round_stats,
+      round_places,
       h2h: h2hArr,
       table_stats
     };
