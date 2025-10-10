@@ -67,8 +67,21 @@ const TeamProfile: React.FC = () => {
 
   // Бэйджи/звания — объявим позже, после streaks
 
-  // По раундам (ищем разные возможные форматы из API)
+  // По раундам: если есть round_places (среднее место в раунде), используем его и инвертируем шкалу
   const roundChart = useMemo(() => {
+    const rp = (data as any)?.round_places as Array<{ round_number: number; avg_place: number }> | undefined;
+    if (Array.isArray(rp) && rp.length) {
+      const items = rp
+        .map((r) => ({ round: Number(r.round_number || 0), place: Number(r.avg_place || 0) }))
+        .filter((x) => Number.isFinite(x.round) && Number.isFinite(x.place))
+        .sort((a, b) => a.round - b.round);
+      const labels = items.map((i) => i.round);
+      const maxPlace = Math.max(1, ...items.map((i) => i.place));
+      // Чем меньше место, тем выше столбец: value = maxPlace - place + 1
+      const values = items.map((i) => Math.max(0, maxPlace - i.place + 1));
+      return { labels, values };
+    }
+    // Fallback к средним очкам
     const ra = (data as any)?.round_averages;
     const rs = (data as any)?.round_stats;
     let items: { round: number; avg: number }[] = [];
