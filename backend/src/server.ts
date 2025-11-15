@@ -67,7 +67,7 @@ app.use((req, res, next) => {
 });
 
 // Static files for uploaded images
-app.use('/uploads', express.static(path.join(process.cwd(), '..', 'uploads')));
+app.use('/uploads', express.static('/usr/src/uploads'));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

@@ -115,6 +115,23 @@ export interface TeamTotal {
   table_code?: string | null;
 }
 
+// Global ranking types
+export interface GlobalRank {
+  title: string;
+  minPoints: number;
+  description: string;
+  icon: string;
+  colorTheme: string;
+}
+
+export interface TeamStatsRankBlock {
+  totalPoints: number;
+  globalRank: GlobalRank | null;
+  nextRank?: GlobalRank | null;
+  progressPercent: number; // 0..100
+  ranks?: GlobalRank[]; // optional full ladder
+}
+
 // API Response types
 export interface ApiResponse<T = any> {
   success: boolean;

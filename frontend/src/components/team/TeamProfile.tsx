@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { apiClient } from '../../services/apiClient';
 import { Card, Avatar, Badge, MiniLineChart, ProgressStat, MiniBarChart, Award } from 'ui';
+import GlobalRanks from './GlobalRanks';
+import PerformanceTrends from './PerformanceTrends';
 
 const TeamProfile: React.FC = () => {
   const { teamId } = useParams();
@@ -155,17 +157,19 @@ const TeamProfile: React.FC = () => {
   return (
     <Card>
       <div className="card-body">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={56} rounded={12} />
-          <div>
-            <h2>{t.name}</h2>
-            <div className="muted">Игр: {data.games_played}</div>
-          </div>
-        </div>
 
         {orderedBadges.length ? (
           <Card style={{ marginBottom: 12 }}>
             <div className="card-body">
+              {/* Блок команды (аватар + название + количество игр) перенесён в «Звания» и сделан крупнее */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={72} rounded={12} />
+                <div>
+                  <div style={{ fontSize: '1.6em', lineHeight: 1.1, fontWeight: 800 }}>{t.name}</div>
+                  <div className="muted" style={{ fontSize: '0.95em' }}>Игр: {data.games_played}</div>
+                </div>
+              </div>
+
               <h3>Звания</h3>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
                 {visibleBadges.map((b, i) => {
@@ -188,6 +192,44 @@ const TeamProfile: React.FC = () => {
                   {showAllBadges ? 'Скрыть' : `Показать все (${orderedBadges.length})`}
                 </button>
               ) : null}
+            </div>
+          </Card>
+        ) : (
+          // Даже если званий нет, покажем крупный блок команды
+          <Card style={{ marginBottom: 12 }}>
+            <div className="card-body">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={72} rounded={12} />
+                <div>
+                  <div style={{ fontSize: '1.6em', lineHeight: 1.1, fontWeight: 800 }}>{t.name}</div>
+                  <div className="muted" style={{ fontSize: '0.95em' }}>Игр: {data.games_played}</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Global ranks section */}
+        {data?.ranking ? (
+          <Card style={{ marginBottom: 12 }}>
+            <div className="card-body">
+              <h3>Глобальные звания</h3>
+              <div className="muted" style={{ marginBottom: 8 }}>
+                Текущее звание: <b>{data.ranking.globalRank?.title || '—'}</b>
+                {data.ranking.nextRank ? (
+                  <span> · Следующее: {data.ranking.nextRank.title} (от {data.ranking.nextRank.minPoints})</span>
+                ) : null}
+              </div>
+              <GlobalRanks ranks={data.ranking.ranks || []} current={data.ranking.globalRank || undefined} progressPercent={data.ranking.progressPercent} />
+            </div>
+          </Card>
+        ) : null}
+
+        {/* Performance Trends */}
+        {data?.trends ? (
+          <Card style={{ marginBottom: 12 }}>
+            <div className="card-body">
+              <PerformanceTrends timeline={data.trends.timeline} monthly={data.trends.monthly} trend_score_delta={data.trends.trend_score_delta} />
             </div>
           </Card>
         ) : null}
