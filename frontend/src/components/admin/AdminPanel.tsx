@@ -3,7 +3,7 @@
  * Main administrative interface for managing game templates, teams, and games
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GameTemplate, Game } from '../../../../shared/types';
 import TeamsManager from './TeamsManager';
 import TemplateList from './TemplateList';
@@ -12,6 +12,7 @@ import GameList from './GameList';
 import GameForm from './GameForm';
 import GameManager from './GameManager';
 import './AdminPanel.css';
+import { apiClient } from '../../services/apiClient';
 
 type AdminView = 'templates' | 'teams' | 'games';
 type TemplateMode = 'list' | 'create' | 'edit';
@@ -19,6 +20,30 @@ type GameMode = 'list' | 'create' | 'view';
 
 export const AdminPanel: React.FC = () => {
   const [currentView, setCurrentView] = useState<AdminView>('games');
+  const [authed, setAuthed] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
+
+  useEffect(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    setAuthed(!!t);
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      setAuthError('');
+      await apiClient.adminLogin(password);
+      setAuthed(true);
+      setPassword('');
+    } catch (e: any) {
+      setAuthError(e?.message || 'Ошибка авторизации');
+    }
+  };
+
+  const handleLogout = () => {
+    apiClient.adminLogout();
+    setAuthed(false);
+  };
   
   const [templateMode, setTemplateMode] = useState<TemplateMode>('list');
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
@@ -176,11 +201,41 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  if (!authed) {
+    return (
+      <div className="admin-panel" style={{ maxWidth: 420, margin: '48px auto' }}>
+        <div className="card">
+          <div className="card-body">
+            <h2 style={{ marginTop: 0 }}>Вход в админ-панель</h2>
+            <div className="form-group">
+              <label className="form-label">Пароль администратора</label>
+              <input
+                type="password"
+                className="form-input"
+                placeholder="Введите пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+              />
+            </div>
+            {authError && <div className="error" style={{ marginBottom: 12 }}><p>{authError}</p></div>}
+            <div className="form-actions">
+              <button className="btn btn-primary" onClick={handleLogin} disabled={!password.trim()}>Войти</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-panel">
       <div className="admin-header">
         <h1>📊 Административная панель</h1>
         <p>Управление системой проведения интеллектуальных игр</p>
+        <div style={{ marginTop: 8 }}>
+          <button className="btn" onClick={handleLogout}>Выйти</button>
+        </div>
       </div>
 
       {renderNavigation()}

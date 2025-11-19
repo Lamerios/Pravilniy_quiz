@@ -126,7 +126,7 @@ const TeamsManager: React.FC = () => {
                   {team.logo_path ? (
                     <img
                       className="team-logo-thumb"
-                      src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${team.logo_path}`}
+                      src={`/uploads/${team.logo_path}`}
                       alt={team.name}
                     />
                   ) : (

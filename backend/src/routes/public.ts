@@ -17,7 +17,9 @@ router.get('/last-game', async (req, res, next) => {
 
 router.get('/stats', async (req, res, next) => {
   try {
-    const data = await statsService.getStats();
+    const { season } = req.query as any;
+    const seasonNum = season ? Number(season) : undefined;
+    const data = await statsService.getStats(seasonNum);
     res.json({ success: true, data });
   } catch (e) {
     next(e);
@@ -26,8 +28,8 @@ router.get('/stats', async (req, res, next) => {
 
 router.get('/ranking', async (req, res, next) => {
   try {
-    const { sort, order, page, limit } = req.query as any;
-    const data = await statsService.getGlobalRanking({ sort, order, page: Number(page), limit: Number(limit) });
+    const { sort, order, page, limit, season } = req.query as any;
+    const data = await statsService.getGlobalRanking({ sort, order, page: Number(page), limit: Number(limit), season: season ? Number(season) : undefined });
     res.json({ success: true, data });
   } catch (e) {
     next(e);

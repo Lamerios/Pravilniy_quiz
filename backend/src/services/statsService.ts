@@ -30,8 +30,24 @@ export interface TeamProfileResponse {
   placements: { first: number; second: number; third: number };
   recent_games: Array<{ game_id: number; game_name: string; total: number; place: number; event_date: string | null }>;
   round_stats?: Array<{ round_number: number; avg_score: number }>;
+  // Среднее место команды по каждому раунду среди всех игр
+  round_places?: Array<{ round_number: number; avg_place: number }>;
   h2h?: Array<{ opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>;
   table_stats?: Array<{ table_number: string; games: number; avg_place: number }>;
+  // Global ranking block
+  ranking?: {
+    totalPoints: number;
+    globalRank: { title: string; minPoints: number; description: string; icon: string; colorTheme: string } | null;
+    nextRank?: { title: string; minPoints: number; description: string; icon: string; colorTheme: string } | null;
+    progressPercent: number;
+    ranks: { title: string; minPoints: number; description: string; icon: string; colorTheme: string }[];
+  };
+  // Performance trends block
+  trends?: {
+    timeline: Array<{ game_id: number; date: string | null; total: number; place: number }>; // chronological (oldest->newest)
+    monthly: Array<{ month: string; avg_total: number; median_place: number; games: number }>;
+    trend_score_delta: number; // last5 avg - prev5 avg
+  };
 }
 
 export const statsService = {
@@ -56,14 +72,31 @@ export const statsService = {
     return { game, totalsByTeam };
   },
 
-  async getStats(): Promise<PublicStatsResponse> {
-    const totalGamesQ = await database.query('SELECT COUNT(*)::int AS c FROM games');
+  async getStats(season?: number): Promise<PublicStatsResponse> {
+    const seasonFilter = season ? 'WHERE EXTRACT(YEAR FROM COALESCE(event_date, created_at)) = $1' : '';
+    const params = season ? [season] : [];
+    const totalGamesQ = await database.query(
+      `SELECT COUNT(*)::int AS c FROM games ${seasonFilter}`,
+      params
+    );
     const totalTeamsQ = await database.query('SELECT COUNT(*)::int AS c FROM teams');
-    const totalScoresQ = await database.query('SELECT COALESCE(SUM(score),0)::float AS s FROM round_scores');
-    const latestGamesQ = await database.query('SELECT id, name, event_date FROM games ORDER BY created_at DESC LIMIT 10');
+    const totalScoresQ = await database.query(
+      `SELECT COALESCE(SUM(rs.score),0)::float AS s
+       FROM round_scores rs
+       JOIN games g ON g.id = rs.game_id
+       ${seasonFilter}`,
+      params
+    );
+    const latestGamesQ = await database.query(
+      `SELECT id, name, event_date FROM games ${seasonFilter} ORDER BY created_at DESC LIMIT 10`,
+      params
+    );
 
     // Получим все игры и посчитаем победителей/места/тоталы
-    const gamesQ = await database.query('SELECT id, name, created_at FROM games ORDER BY created_at DESC');
+    const gamesQ = await database.query(
+      `SELECT id, name, created_at FROM games ${seasonFilter} ORDER BY created_at DESC`,
+      params
+    );
     const leadersWins = new Map<number, { team_id: number; team_name: string; wins: number }>();
     const leadersPlaces = new Map<number, { team_id: number; team_name: string; first_places: number; second_places: number; third_places: number }>();
     const totalsByTeam: Map<number, { team_id: number; team_name: string; total: number; games: number }> = new Map();
@@ -211,9 +244,13 @@ export const statsService = {
     let totalPoints = 0;
     let first = 0, second = 0, third = 0;
     const recent: Array<{ game_id: number; game_name: string; total: number; place: number; event_date: string | null }> = [];
+    // for trends
+    const timeline: Array<{ game_id: number; date: string | null; total: number; place: number }> = [];
 
     // агрегаты по раундам
     const roundAgg = new Map<number, { sum: number; count: number }>();
+    // агрегаты по местам в каждом раунде
+    const roundPlaceAgg = new Map<number, { sumPlace: number; count: number }>();
     
     // Head-to-Head агрегация
     const h2h = new Map<number, { opponent_id: number; opponent_name: string; games: number; wins: number; losses: number; draws: number }>();
@@ -262,6 +299,7 @@ export const statsService = {
       totalPoints += me.total;
       if (place === 1) first += 1; else if (place === 2) second += 1; else if (place === 3) third += 1;
       if (recent.length < 10) recent.push({ game_id: g.id, game_name: g.name, total: me.total, place, event_date: g.event_date || null });
+      timeline.push({ game_id: g.id, date: g.event_date || null, total: me.total, place });
 
       // накапливаем по раундам значения этой команды
       for (let i = 0; i < roundNumbers.length; i++) {
@@ -271,6 +309,18 @@ export const statsService = {
         agg.sum += val;
         agg.count += 1;
         roundAgg.set(rn, agg);
+
+        // вычисляем место команды в этом раунде (сравниваем только по текущему номеру раунда)
+        const roundEntries: Array<{ team_id: number; score: number }> = [];
+        for (const otherId of teamIds) {
+          roundEntries.push({ team_id: otherId, score: byTeamRound.get(`${otherId}:${rn}`) || 0 });
+        }
+        roundEntries.sort((a, b) => b.score - a.score);
+        const placeInRound = (roundEntries.findIndex((r) => r.team_id === teamId) + 1) || roundEntries.length;
+        const plAgg = roundPlaceAgg.get(rn) || { sumPlace: 0, count: 0 };
+        plAgg.sumPlace += placeInRound;
+        plAgg.count += 1;
+        roundPlaceAgg.set(rn, plAgg);
       }
 
       // Head-to-Head: подготовим места всех команд в этой игре
@@ -299,10 +349,43 @@ export const statsService = {
     }
 
     const avg = gamesPlayed > 0 ? Number((totalPoints / gamesPlayed).toFixed(2)) : 0;
+    // Sort timeline by date/created order ascending
+    timeline.sort((a, b) => {
+      const da = a.date ? new Date(a.date).getTime() : 0;
+      const db = b.date ? new Date(b.date).getTime() : 0;
+      return da - db;
+    });
+    // monthly aggregates
+    const monthMap = new Map<string, { totals: number[]; places: number[] }>();
+    for (const t of timeline) {
+      const key = t.date ? new Date(t.date).toISOString().slice(0, 7) : 'unknown';
+      const rec = monthMap.get(key) || { totals: [], places: [] };
+      rec.totals.push(t.total);
+      rec.places.push(t.place);
+      monthMap.set(key, rec);
+    }
+    const monthly = Array.from(monthMap.entries()).map(([month, v]) => {
+      const sum = v.totals.reduce((s, x) => s + x, 0);
+      const avg_total = v.totals.length ? Number((sum / v.totals.length).toFixed(2)) : 0;
+      const sortedPlaces = v.places.slice().sort((a, b) => a - b);
+      const mid = Math.floor(sortedPlaces.length / 2);
+      const median_place = sortedPlaces.length ? (sortedPlaces.length % 2 ? sortedPlaces[mid] : Number(((sortedPlaces[mid - 1] + sortedPlaces[mid]) / 2).toFixed(2))) : 0;
+      return { month, avg_total, median_place, games: v.totals.length };
+    }).sort((a, b) => a.month.localeCompare(b.month));
+    // trend delta last5 vs prev5 by score
+    const last5 = timeline.slice(-5);
+    const prev5 = timeline.slice(-10, -5);
+    const avgOf = (arr: typeof timeline) => (arr.length ? arr.reduce((s, x) => s + x.total, 0) / arr.length : 0);
+    const trend_score_delta = Number((avgOf(last5) - avgOf(prev5)).toFixed(2));
     // формируем средние по раундам
     let round_stats = Array.from(roundAgg.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([round_number, v]) => ({ round_number, avg_score: v.count > 0 ? Number((v.sum / v.count).toFixed(2)) : 0 }));
+
+    // формируем среднее место по раундам
+    const round_places = Array.from(roundPlaceAgg.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([round_number, v]) => ({ round_number, avg_place: v.count > 0 ? Number((v.sumPlace / v.count).toFixed(2)) : 0 }));
 
     // Fallback: если по какой-то причине агрегация дала нули, считаем напрямую SQL'ом
     const hasPositive = round_stats.some((r) => r.avg_score > 0);
@@ -321,6 +404,29 @@ export const statsService = {
       .map(([table_number, v]) => ({ table_number: String(table_number), games: Number(v.games) || 0, avg_place: v.games > 0 ? Number((v.sumPlace / v.games).toFixed(2)) : 0 }))
       .sort((a: { table_number: string; games: number; avg_place: number }, b: { table_number: string; games: number; avg_place: number }) => (a.avg_place || 0) - (b.avg_place || 0));
 
+    // Global rank thresholds (can be moved to DB later)
+    type RankColor = string;
+    const RANKS: Array<{ title: string; minPoints: number; icon: string; colorTheme: RankColor; description: string }> = [
+      { title: 'Сержант', minPoints: 100, icon: 'sergeant.png', colorTheme: 'cyan', description: 'Начальный элитный боец' },
+      { title: 'Лейтенант', minPoints: 250, icon: 'lieutenant.png', colorTheme: 'pink', description: 'Уверенно идёт к победам' },
+      { title: 'Генерал', minPoints: 500, icon: 'general.png', colorTheme: 'yellow', description: 'Тактический гений' },
+      { title: 'Рэмбо', minPoints: 1000, icon: 'rambo.png', colorTheme: 'cyan', description: 'Тащят как надо' },
+      { title: 'Чак Норрис', minPoints: 2000, icon: 'chuck.png', colorTheme: 'cyan', description: 'Непобедимый' },
+      { title: 'Недосягаемые', minPoints: 6000, icon: 'unreachable.png', colorTheme: 'pink', description: 'Вершина мастерства' },
+      { title: 'Легенда', minPoints: 12000, icon: 'legend.png', colorTheme: 'red', description: 'Икона квиза' },
+    ].sort((a, b) => a.minPoints - b.minPoints);
+
+    const currentIdx = RANKS.filter(r => totalPoints >= r.minPoints).length - 1;
+    const currentRank = currentIdx >= 0 ? RANKS[currentIdx] : null;
+    const nextRank = currentIdx + 1 < RANKS.length ? RANKS[currentIdx + 1] : null;
+    let progressPercent = 100;
+    if (nextRank && currentRank) {
+      const span = Math.max(1, nextRank.minPoints - currentRank.minPoints);
+      progressPercent = Math.max(0, Math.min(100, Math.round(((totalPoints - currentRank.minPoints) / span) * 100)));
+    } else if (!currentRank && nextRank) {
+      progressPercent = Math.max(0, Math.min(100, Math.round((totalPoints / nextRank.minPoints) * 100)));
+    }
+
     return {
       team,
       games_played: gamesPlayed,
@@ -329,16 +435,29 @@ export const statsService = {
       placements: { first, second, third },
       recent_games: recent,
       round_stats,
+      round_places,
       h2h: h2hArr,
-      table_stats
+      table_stats,
+      ranking: {
+        totalPoints,
+        globalRank: currentRank ? { title: currentRank.title, minPoints: currentRank.minPoints, description: currentRank.description, icon: currentRank.icon, colorTheme: currentRank.colorTheme } : null,
+        nextRank: nextRank ? { title: nextRank.title, minPoints: nextRank.minPoints, description: nextRank.description, icon: nextRank.icon, colorTheme: nextRank.colorTheme } : null,
+        progressPercent,
+        ranks: RANKS.map(r => ({ title: r.title, minPoints: r.minPoints, description: r.description, icon: r.icon, colorTheme: r.colorTheme }))
+      },
+      trends: {
+        timeline,
+        monthly,
+        trend_score_delta
+      }
     };
   }
   ,
   /**
    * Server-side global ranking sorting + pagination (reuses aggregated data)
    */
-  async getGlobalRanking(params: { sort?: string; order?: 'asc' | 'desc'; page?: number; limit?: number }) {
-    const base = await this.getStats();
+  async getGlobalRanking(params: { sort?: string; order?: 'asc' | 'desc'; page?: number; limit?: number; season?: number }) {
+    const base = await this.getStats(params.season);
     const sort = (params.sort || 'total_points') as 'games' | 'avg_place' | 'total_points' | 'avg_points';
     const order = params.order || (sort === 'avg_place' ? 'asc' : 'desc');
     const page = Math.max(1, Number(params.page || 1));

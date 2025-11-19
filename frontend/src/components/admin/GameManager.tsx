@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Game, RoundScore, TemplateRound, GameParticipant } from '../../../../shared/types';
+import { Game, RoundScore, TemplateRound, GameParticipant, Team } from '../../../../shared/types';
 import { apiClient } from '../../services/apiClient';
 import { io as socketIO, Socket } from 'socket.io-client';
 import './GameManager.css';
@@ -112,7 +112,8 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
   }, [gameId]);
 
   useEffect(() => {
-    const socket: Socket = socketIO(process.env.REACT_APP_API_URL || 'http://localhost:5001', { transports: ['websocket'] });
+    const base = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const socket: Socket = base ? socketIO(base, { transports: ['websocket'] }) : socketIO({ transports: ['websocket'] });
     socket.emit('join-game', gameId);
 
     const handleScores = (updated: RoundScore[]) => {
@@ -136,6 +137,9 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
     };
 
     socket.on('scores-updated', handleScores);
+    socket.on('game-updated', (g: Game) => {
+      setGame(g);
+    });
 
     return () => {
       socket.emit('leave-game', gameId);
@@ -346,6 +350,19 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
           </div>
         </div>
 
+        {/* Participants editor */}
+        <div className="card" style={{ marginTop: 12 }}>
+          <div className="card-body">
+            <h3 style={{ marginTop: 0 }}>Участники</h3>
+            <ParticipantsEditor gameId={game.id} onChanged={async () => {
+              const g = await apiClient.getGame(gameId);
+              setGame(g);
+              const sc = await apiClient.getScores(gameId);
+              setScores(sc);
+            }} />
+          </div>
+        </div>
+
         {/* Rounds list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
           {rounds.map((r) => {
@@ -426,7 +443,7 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
                                 <tr key={p.id}>
                                   <td>
                                     {p.team?.logo_path ? (
-                                      <img alt="logo" src={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${p.team.logo_path}`} style={{ width: 24, height: 24, objectFit: 'cover', borderRadius: 4, marginRight: 6, verticalAlign: 'middle' }} />
+                                      <img alt="logo" src={`/uploads/${p.team.logo_path}`} style={{ width: 24, height: 24, objectFit: 'cover', borderRadius: 4, marginRight: 6, verticalAlign: 'middle' }} />
                                     ) : null}
                                     <span>{p.team?.name || `Команда #${p.team_id}`}</span>
                                   </td>
@@ -494,3 +511,145 @@ const GameManager: React.FC<GameManagerProps> = ({ gameId, onBack }) => {
 };
 
 export default GameManager;
+
+// Participants editor block for adding/removing teams during an active game
+const ParticipantsEditor: React.FC<{ gameId: number; onChanged: () => void }> = ({ gameId, onChanged }) => {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [participants, setParticipants] = useState<GameParticipant[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [selectedTeamId, setSelectedTeamId] = useState<number | ''>('');
+  const [tableLabel, setTableLabel] = useState<string>('');
+  const [participantsCount, setParticipantsCount] = useState<string>('');
+  const [saving, setSaving] = useState<boolean>(false);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const [allTeams, game] = await Promise.all([
+        apiClient.getTeams(),
+        apiClient.getGame(gameId),
+      ]);
+      setTeams(allTeams);
+      setParticipants(game.participants || []);
+    } catch (e: any) {
+      setError(e?.message || 'Не удалось загрузить участников');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
+
+  const currentTeamIds = new Set((participants || []).map(p => p.team_id));
+  const availableTeams = teams.filter(t => !currentTeamIds.has(t.id));
+
+  const onAdd = async () => {
+    if (!selectedTeamId || typeof selectedTeamId !== 'number') return;
+    try {
+      setSaving(true);
+      const cnt = participantsCount === '' ? null : Number(participantsCount);
+      await apiClient.addParticipant(gameId, { team_id: selectedTeamId, table_number: tableLabel.trim() || null, participants_count: cnt });
+      setSelectedTeamId('');
+      setTableLabel('');
+      setParticipantsCount('');
+      await load();
+      await onChanged();
+    } catch (e: any) {
+      setError(e?.message || 'Не удалось добавить участника');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onRemove = async (teamId: number) => {
+    try {
+      setSaving(true);
+      await apiClient.removeParticipant(gameId, teamId);
+      await load();
+      await onChanged();
+    } catch (e: any) {
+      setError(e?.message || 'Не удалось удалить участника');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      {error && <div className="error" style={{ marginBottom: 12 }}><p>{error}</p></div>}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ minWidth: 220 }}>
+          <label className="form-label">Команда</label>
+          <select
+            className="form-input"
+            value={selectedTeamId as any}
+            onChange={(e) => setSelectedTeamId(e.target.value ? Number(e.target.value) : '')}
+            disabled={loading || saving}
+          >
+            <option value="">— выбрать —</option>
+            {availableTeams.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="form-label">Номер стола (опц.)</label>
+          <input
+            className="form-input"
+            type="text"
+            placeholder="Напр., A12"
+            value={tableLabel}
+            onChange={(e) => setTableLabel(e.target.value)}
+            disabled={loading || saving}
+          />
+        </div>
+        <div>
+          <label className="form-label">Количество участников (опц.)</label>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="numeric"
+            placeholder="0–99"
+            value={participantsCount}
+            onChange={(e) => { const v = e.target.value; if (v === '' || /^\d{1,2}$/.test(v)) setParticipantsCount(v); }}
+            disabled={loading || saving}
+            style={{ width: 100 }}
+          />
+        </div>
+        <div>
+          <button className="btn btn-primary" onClick={onAdd} disabled={loading || saving || !selectedTeamId}>+ Добавить</button>
+        </div>
+      </div>
+
+      <div className="table" style={{ width: '100%', overflowX: 'auto', marginTop: 12 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left' }}>Команда</th>
+              <th style={{ textAlign: 'left' }}>Номер стола</th>
+              <th style={{ textAlign: 'left' }}>Участников</th>
+              <th style={{ textAlign: 'left' }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {(participants || []).map(p => (
+              <tr key={p.id}>
+                <td>{p.team?.name || `Команда #${p.team_id}`}</td>
+                <td>{p.table_number || '—'}</td>
+                <td>{p.participants_count ?? '—'}</td>
+                <td>
+                  <button className="btn btn-danger" onClick={() => onRemove(p.team_id)} disabled={saving}>Удалить</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

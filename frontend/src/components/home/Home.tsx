@@ -63,14 +63,15 @@ const Home: React.FC = () => {
   const [ranking, setRanking] = useState<any>({ items: [], page: 1, limit: 10, total: 0, total_pages: 1 });
   const [teamsPage, setTeamsPage] = useState(1);
   const [sort, setSort] = useState<{ key: string; order: 'asc' | 'desc' }>({ key: 'total_points', order: 'desc' });
+  const [season, setSeason] = useState<number>(2026);
 
   useEffect(() => {
     (async () => {
       try {
         const [lg, st, rk] = await Promise.all([
           apiClient.getPublicLastGame(),
-          apiClient.getPublicStats(),
-          apiClient.getPublicRanking({ page: 1, limit: 10 })
+          apiClient.getPublicStats(season),
+          apiClient.getPublicRanking({ page: 1, limit: 10, season })
         ]);
         setLast(lg);
         setStats(st);
@@ -81,7 +82,7 @@ const Home: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [season]);
 
   const sortedParticipants = useMemo(() => {
     if (!last?.game?.participants || !last?.totalsByTeam) return [];
@@ -128,6 +129,16 @@ const Home: React.FC = () => {
   return (
     <div className="card">
       <div className="card-body">
+        {/* Season selector + Top summary */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label className="muted" htmlFor="season-select">Сезон:</label>{' '}
+            <select id="season-select" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
+              <option value={2026}>2026</option>
+              <option value={2025}>2025</option>
+            </select>
+          </div>
+        </div>
         {/* Top summary */}
         {stats ? (
           <div className="card-grid" style={{ marginBottom: 16 }}>
@@ -147,10 +158,10 @@ const Home: React.FC = () => {
                   <thead>
                     <tr>
                       <th style={{ textAlign: 'left' }}>Команда</th>
-                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'games' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'games', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'games', order: order as any, page: 1, limit: ranking.limit })); }}>Игр {sort.key==='games'? (sort.order==='asc'?'▲':'▼'):''}</th>
-                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_place' && sort.order === 'asc' ? 'desc' : 'asc'; setSort({ key: 'avg_place', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_place', order: order as any, page: 1, limit: ranking.limit })); }}>Среднее место {sort.key==='avg_place'? (sort.order==='asc'?'▲':'▼'):''}</th>
-                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'total_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'total_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'total_points', order: order as any, page: 1, limit: ranking.limit })); }}>Сумма баллов {sort.key==='total_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
-                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'avg_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_points', order: order as any, page: 1, limit: ranking.limit })); }}>Средний итог {sort.key==='avg_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'games' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'games', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'games', order: order as any, page: 1, limit: ranking.limit, season })); }}>Игр {sort.key==='games'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_place' && sort.order === 'asc' ? 'desc' : 'asc'; setSort({ key: 'avg_place', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_place', order: order as any, page: 1, limit: ranking.limit, season })); }}>Среднее место {sort.key==='avg_place'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'total_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'total_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'total_points', order: order as any, page: 1, limit: ranking.limit, season })); }}>Сумма баллов {sort.key==='total_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
+                      <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={async () => { const order = sort.key === 'avg_points' && sort.order === 'desc' ? 'asc' : 'desc'; setSort({ key: 'avg_points', order: order as any }); setRanking(await apiClient.getPublicRanking({ sort: 'avg_points', order: order as any, page: 1, limit: ranking.limit, season })); }}>Средний итог {sort.key==='avg_points'? (sort.order==='asc'?'▲':'▼'):''}</th>
                       <th style={{ textAlign: 'center' }}>🥇</th>
                       <th style={{ textAlign: 'center' }}>🥈</th>
                       <th style={{ textAlign: 'center' }}>🥉</th>
@@ -172,9 +183,9 @@ const Home: React.FC = () => {
                   </tbody>
                 </table>
               <div className="mt-2" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button className="btn btn-secondary" disabled={ranking.page<=1} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page-1, limit: ranking.limit }))}>Назад</button>
+                <button className="btn btn-secondary" disabled={ranking.page<=1} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page-1, limit: ranking.limit, season }))}>Назад</button>
                 <div className="muted">Стр. {ranking.page} / {ranking.total_pages}</div>
-                <button className="btn btn-secondary" disabled={ranking.page>=ranking.total_pages} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page+1, limit: ranking.limit }))}>Вперёд</button>
+                <button className="btn btn-secondary" disabled={ranking.page>=ranking.total_pages} onClick={async ()=> setRanking(await apiClient.getPublicRanking({ sort: sort.key, order: sort.order, page: ranking.page+1, limit: ranking.limit, season }))}>Вперёд</button>
               </div>
               </div>
             </div>

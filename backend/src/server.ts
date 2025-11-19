@@ -67,7 +67,7 @@ app.use((req, res, next) => {
 });
 
 // Static files for uploaded images
-app.use('/uploads', express.static(path.join(process.cwd(), '..', 'uploads')));
+app.use('/uploads', express.static('/usr/src/uploads'));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -94,10 +94,13 @@ import templatesRouter from './routes/templates';
 import teamsRouter from './routes/teams';
 import gamesRouter from './routes/games';
 import publicRouter from './routes/public';
+import authRouter from './routes/auth';
+import { requireAdmin } from './middleware/auth';
 
-app.use('/api/templates', templatesRouter);
-app.use('/api/teams', teamsRouter);
-app.use('/api/games', gamesRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/templates', requireAdmin, templatesRouter);
+app.use('/api/teams', requireAdmin, teamsRouter);
+app.use('/api/games', requireAdmin, gamesRouter);
 app.use('/api/public', publicRouter);
 
 // Error handling middleware
