@@ -338,8 +338,8 @@ class ApiClient {
     return res.data.data || null;
   }
 
-  async getPublicStats(): Promise<any> {
-    const res = await this.client.get('/api/public/stats');
+  async getPublicStats(season?: number): Promise<any> {
+    const res = await this.client.get('/api/public/stats', { params: season ? { season } : undefined });
     return res.data.data;
   }
 
@@ -348,7 +348,7 @@ class ApiClient {
     return res.data.data;
   }
 
-  async getPublicRanking(params: { sort?: string; order?: 'asc'|'desc'; page?: number; limit?: number }): Promise<any> {
+  async getPublicRanking(params: { sort?: string; order?: 'asc'|'desc'; page?: number; limit?: number; season?: number }): Promise<any> {
     const res = await this.client.get('/api/public/ranking', { params });
     return res.data.data;
   }

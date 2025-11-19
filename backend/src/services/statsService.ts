@@ -72,14 +72,31 @@ export const statsService = {
     return { game, totalsByTeam };
   },
 
-  async getStats(): Promise<PublicStatsResponse> {
-    const totalGamesQ = await database.query('SELECT COUNT(*)::int AS c FROM games');
+  async getStats(season?: number): Promise<PublicStatsResponse> {
+    const seasonFilter = season ? 'WHERE EXTRACT(YEAR FROM COALESCE(event_date, created_at)) = $1' : '';
+    const params = season ? [season] : [];
+    const totalGamesQ = await database.query(
+      `SELECT COUNT(*)::int AS c FROM games ${seasonFilter}`,
+      params
+    );
     const totalTeamsQ = await database.query('SELECT COUNT(*)::int AS c FROM teams');
-    const totalScoresQ = await database.query('SELECT COALESCE(SUM(score),0)::float AS s FROM round_scores');
-    const latestGamesQ = await database.query('SELECT id, name, event_date FROM games ORDER BY created_at DESC LIMIT 10');
+    const totalScoresQ = await database.query(
+      `SELECT COALESCE(SUM(rs.score),0)::float AS s
+       FROM round_scores rs
+       JOIN games g ON g.id = rs.game_id
+       ${seasonFilter}`,
+      params
+    );
+    const latestGamesQ = await database.query(
+      `SELECT id, name, event_date FROM games ${seasonFilter} ORDER BY created_at DESC LIMIT 10`,
+      params
+    );
 
     // Получим все игры и посчитаем победителей/места/тоталы
-    const gamesQ = await database.query('SELECT id, name, created_at FROM games ORDER BY created_at DESC');
+    const gamesQ = await database.query(
+      `SELECT id, name, created_at FROM games ${seasonFilter} ORDER BY created_at DESC`,
+      params
+    );
     const leadersWins = new Map<number, { team_id: number; team_name: string; wins: number }>();
     const leadersPlaces = new Map<number, { team_id: number; team_name: string; first_places: number; second_places: number; third_places: number }>();
     const totalsByTeam: Map<number, { team_id: number; team_name: string; total: number; games: number }> = new Map();
@@ -439,8 +456,8 @@ export const statsService = {
   /**
    * Server-side global ranking sorting + pagination (reuses aggregated data)
    */
-  async getGlobalRanking(params: { sort?: string; order?: 'asc' | 'desc'; page?: number; limit?: number }) {
-    const base = await this.getStats();
+  async getGlobalRanking(params: { sort?: string; order?: 'asc' | 'desc'; page?: number; limit?: number; season?: number }) {
+    const base = await this.getStats(params.season);
     const sort = (params.sort || 'total_points') as 'games' | 'avg_place' | 'total_points' | 'avg_points';
     const order = params.order || (sort === 'avg_place' ? 'asc' : 'desc');
     const page = Math.max(1, Number(params.page || 1));
