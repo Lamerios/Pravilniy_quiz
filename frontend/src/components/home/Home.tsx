@@ -129,14 +129,73 @@ const Home: React.FC = () => {
   return (
     <div className="card">
       <div className="card-body">
-        {/* Season selector + Top summary */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label className="muted" htmlFor="season-select">Сезон:</label>{' '}
-            <select id="season-select" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
-              <option value={2026}>2026</option>
-              <option value={2025}>2025</option>
-            </select>
+        {/* Season selector - Attractive UX */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ 
+            display: 'inline-flex', 
+            gap: 8, 
+            padding: 4, 
+            backgroundColor: 'var(--bg-secondary, #f5f5f5)', 
+            borderRadius: 12,
+            border: '1px solid var(--border-color, #e0e0e0)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          }}>
+            <button
+              onClick={() => setSeason(2026)}
+              style={{
+                padding: '10px 24px',
+                borderRadius: 8,
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: season === 2026 ? 600 : 400,
+                fontSize: '15px',
+                transition: 'all 0.2s ease',
+                backgroundColor: season === 2026 ? 'var(--primary-color, #007bff)' : 'transparent',
+                color: season === 2026 ? '#fff' : 'var(--text-color, #333)',
+                boxShadow: season === 2026 ? '0 2px 8px rgba(0,123,255,0.3)' : 'none',
+                transform: season === 2026 ? 'scale(1.02)' : 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                if (season !== 2026) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #e8e8e8)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (season !== 2026) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Сезон 2026
+            </button>
+            <button
+              onClick={() => setSeason(2025)}
+              style={{
+                padding: '10px 24px',
+                borderRadius: 8,
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: season === 2025 ? 600 : 400,
+                fontSize: '15px',
+                transition: 'all 0.2s ease',
+                backgroundColor: season === 2025 ? 'var(--primary-color, #007bff)' : 'transparent',
+                color: season === 2025 ? '#fff' : 'var(--text-color, #333)',
+                boxShadow: season === 2025 ? '0 2px 8px rgba(0,123,255,0.3)' : 'none',
+                transform: season === 2025 ? 'scale(1.02)' : 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                if (season !== 2025) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #e8e8e8)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (season !== 2025) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              Сезон 2025
+            </button>
           </div>
         </div>
         {/* Top summary */}

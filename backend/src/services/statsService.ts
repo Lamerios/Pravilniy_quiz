@@ -73,10 +73,23 @@ export const statsService = {
   },
 
   async getStats(season?: number): Promise<PublicStatsResponse> {
-    const seasonFilter = season ? 'WHERE EXTRACT(YEAR FROM COALESCE(event_date, created_at)) = $1' : '';
-    const params = season ? [season] : [];
+    // Сезон 2025: все игры до 21.11.2025 включительно
+    // Сезон 2026: все игры с 21.11.2025
+    const SEASON_2026_START = '2025-11-21';
+    let seasonFilterGames = '';
+    let seasonFilterGamesAliased = '';
+    const params: any[] = [];
+    if (season === 2025) {
+      seasonFilterGames = 'WHERE COALESCE(event_date, created_at) < $1';
+      seasonFilterGamesAliased = 'WHERE COALESCE(g.event_date, g.created_at) < $1';
+      params.push(SEASON_2026_START);
+    } else if (season === 2026) {
+      seasonFilterGames = 'WHERE COALESCE(event_date, created_at) >= $1';
+      seasonFilterGamesAliased = 'WHERE COALESCE(g.event_date, g.created_at) >= $1';
+      params.push(SEASON_2026_START);
+    }
     const totalGamesQ = await database.query(
-      `SELECT COUNT(*)::int AS c FROM games ${seasonFilter}`,
+      `SELECT COUNT(*)::int AS c FROM games ${seasonFilterGames}`,
       params
     );
     const totalTeamsQ = await database.query('SELECT COUNT(*)::int AS c FROM teams');
@@ -84,17 +97,17 @@ export const statsService = {
       `SELECT COALESCE(SUM(rs.score),0)::float AS s
        FROM round_scores rs
        JOIN games g ON g.id = rs.game_id
-       ${seasonFilter}`,
+       ${seasonFilterGamesAliased}`,
       params
     );
     const latestGamesQ = await database.query(
-      `SELECT id, name, event_date FROM games ${seasonFilter} ORDER BY created_at DESC LIMIT 10`,
+      `SELECT id, name, event_date FROM games ${seasonFilterGames} ORDER BY created_at DESC LIMIT 10`,
       params
     );
 
     // Получим все игры и посчитаем победителей/места/тоталы
     const gamesQ = await database.query(
-      `SELECT id, name, created_at FROM games ${seasonFilter} ORDER BY created_at DESC`,
+      `SELECT id, name, created_at FROM games ${seasonFilterGames} ORDER BY created_at DESC`,
       params
     );
     const leadersWins = new Map<number, { team_id: number; team_name: string; wins: number }>();
