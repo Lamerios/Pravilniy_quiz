@@ -129,16 +129,16 @@ const Home: React.FC = () => {
   return (
     <div className="card">
       <div className="card-body">
-        {/* Season selector - Attractive UX */}
+        {/* Season selector - Golden UX */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ 
             display: 'inline-flex', 
             gap: 8, 
             padding: 4, 
-            backgroundColor: 'var(--bg-secondary, #f5f5f5)', 
+            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
             borderRadius: 12,
-            border: '1px solid var(--border-color, #e0e0e0)',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            border: '2px solid #fbbf24',
+            boxShadow: '0 4px 12px rgba(251, 191, 36, 0.25)'
           }}>
             <button
               onClick={() => setSeason(2026)}
@@ -147,22 +147,29 @@ const Home: React.FC = () => {
                 borderRadius: 8,
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: season === 2026 ? 600 : 400,
+                fontWeight: season === 2026 ? 700 : 500,
                 fontSize: '15px',
                 transition: 'all 0.2s ease',
-                backgroundColor: season === 2026 ? 'var(--primary-color, #007bff)' : 'transparent',
-                color: season === 2026 ? '#fff' : 'var(--text-color, #333)',
-                boxShadow: season === 2026 ? '0 2px 8px rgba(0,123,255,0.3)' : 'none',
-                transform: season === 2026 ? 'scale(1.02)' : 'scale(1)'
+                background: season === 2026 
+                  ? 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' 
+                  : 'transparent',
+                color: season === 2026 ? '#fff' : '#92400e',
+                boxShadow: season === 2026 
+                  ? '0 4px 12px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+                  : 'none',
+                transform: season === 2026 ? 'scale(1.02)' : 'scale(1)',
+                textShadow: season === 2026 ? '0 1px 2px rgba(0, 0, 0, 0.2)' : 'none'
               }}
               onMouseEnter={(e) => {
                 if (season !== 2026) {
-                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #e8e8e8)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                  e.currentTarget.style.color = '#78350f';
                 }
               }}
               onMouseLeave={(e) => {
                 if (season !== 2026) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#92400e';
                 }
               }}
             >
@@ -175,22 +182,29 @@ const Home: React.FC = () => {
                 borderRadius: 8,
                 border: 'none',
                 cursor: 'pointer',
-                fontWeight: season === 2025 ? 600 : 400,
+                fontWeight: season === 2025 ? 700 : 500,
                 fontSize: '15px',
                 transition: 'all 0.2s ease',
-                backgroundColor: season === 2025 ? 'var(--primary-color, #007bff)' : 'transparent',
-                color: season === 2025 ? '#fff' : 'var(--text-color, #333)',
-                boxShadow: season === 2025 ? '0 2px 8px rgba(0,123,255,0.3)' : 'none',
-                transform: season === 2025 ? 'scale(1.02)' : 'scale(1)'
+                background: season === 2025 
+                  ? 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' 
+                  : 'transparent',
+                color: season === 2025 ? '#fff' : '#92400e',
+                boxShadow: season === 2025 
+                  ? '0 4px 12px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+                  : 'none',
+                transform: season === 2025 ? 'scale(1.02)' : 'scale(1)',
+                textShadow: season === 2025 ? '0 1px 2px rgba(0, 0, 0, 0.2)' : 'none'
               }}
               onMouseEnter={(e) => {
                 if (season !== 2025) {
-                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #e8e8e8)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                  e.currentTarget.style.color = '#78350f';
                 }
               }}
               onMouseLeave={(e) => {
                 if (season !== 2025) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#92400e';
                 }
               }}
             >
