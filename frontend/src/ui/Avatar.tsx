@@ -16,6 +16,14 @@ function getInitials(name?: string): string {
 
 export const Avatar: React.FC<AvatarProps> = ({ src, name, size = 40, rounded = 10, style, className, ...rest }) => {
   const initials = getInitials(name);
+  const [imageError, setImageError] = React.useState(false);
+  const [imageSrc, setImageSrc] = React.useState<string | undefined>(src);
+
+  React.useEffect(() => {
+    setImageSrc(src);
+    setImageError(false);
+  }, [src]);
+
   const baseStyle: React.CSSProperties = {
     width: size,
     height: size,
@@ -29,10 +37,19 @@ export const Avatar: React.FC<AvatarProps> = ({ src, name, size = 40, rounded = 
     boxShadow: 'var(--shadow-md)'
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div className={[className || ''].filter(Boolean).join(' ')} style={{ ...baseStyle, ...style }} {...rest}>
-      {src ? (
-        <img src={src} alt={name || 'Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: rounded }} />
+      {imageSrc && !imageError ? (
+        <img 
+          src={imageSrc} 
+          alt={name || 'Avatar'} 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: rounded }} 
+          onError={handleImageError}
+        />
       ) : (
         <span style={{ fontSize: Math.max(12, Math.floor(size / 3)) }}>{initials}</span>
       )}

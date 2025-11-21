@@ -128,6 +128,18 @@ const TeamsManager: React.FC = () => {
                       className="team-logo-thumb"
                       src={`/uploads/${team.logo_path}`}
                       alt={team.name}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('span')) {
+                          const span = document.createElement('span');
+                          span.style.color = '#888';
+                          span.style.fontSize = '12px';
+                          span.textContent = 'Нет логотипа';
+                          parent.appendChild(span);
+                        }
+                      }}
                     />
                   ) : (
                     <span style={{ color: '#888', fontSize: 12 }}>Нет логотипа</span>

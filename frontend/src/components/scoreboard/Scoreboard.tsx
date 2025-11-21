@@ -169,7 +169,13 @@ const Scoreboard: React.FC = () => {
                 <div className="leader-info">
                   <div className="leader-team">
                     {participant.team?.logo_path ? (
-                      <img alt="logo" src={`/uploads/${participant.team.logo_path}`} />
+                      <img 
+                        alt="logo" 
+                        src={`/uploads/${participant.team.logo_path}`} 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
                     ) : null}
                     <strong>{participant.team?.name || `Команда #${participant.team_id}`}</strong>
                   </div>
@@ -212,7 +218,14 @@ const Scoreboard: React.FC = () => {
                     <td>
                       <div className="team-cell">
                         {p.team?.logo_path ? (
-                          <img className="team-logo-small" alt="logo" src={`/uploads/${p.team.logo_path}`} />
+                          <img 
+                            className="team-logo-small" 
+                            alt="logo" 
+                            src={`/uploads/${p.team.logo_path}`}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                         ) : null}
                         <span className="team-name-text">{p.team?.name || `Команда #${p.team_id}`}</span>
                       </div>
