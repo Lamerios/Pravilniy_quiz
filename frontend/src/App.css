@@ -536,3 +536,11 @@ tbody tr:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--purple-500);
 }
+
+/* App Footer */
+.App-footer {
+  margin-top: auto;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-sm) 0;
+}

@@ -24,7 +24,7 @@ function App() {
           </Link>
         </header>
         
-        <main>
+        <main style={{ flex: 1 }}>
           <Routes>
             {/* Public Home */}
             <Route path="/" element={<Home />} />
@@ -42,6 +42,23 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+        
+        <footer className="App-footer">
+          <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--gray-600)', padding: 'var(--space-md)' }}>
+            Разработано{' '}
+            <a 
+              href="https://t.me/lamerios" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ color: 'var(--purple-600)', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+            >
+              Lamerios
+            </a>
+            {' '}с любовью к жителям Испанских кварталов
+          </div>
+        </footer>
       </div>
     </Router>
   );
