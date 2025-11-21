@@ -164,17 +164,17 @@ const TeamProfile: React.FC = () => {
   const t = data.team;
   return (
     <Card>
-      <div className="card-body">
+      <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
 
         {orderedBadges.length ? (
-          <Card style={{ marginBottom: 12 }}>
-            <div className="card-body">
+          <Card style={{ marginBottom: isMobile ? 8 : 12 }}>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
               {/* Блок команды (аватар + название + количество игр) перенесён в «Звания» и сделан крупнее */}
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: isMobile ? 12 : 16, 
-                marginBottom: 8,
+                gap: isMobile ? 10 : 16, 
+                marginBottom: isMobile ? 6 : 8,
                 flexWrap: isMobile ? 'wrap' : 'nowrap'
               }}>
                 <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={isMobile ? 56 : 72} rounded={12} />
@@ -189,8 +189,8 @@ const TeamProfile: React.FC = () => {
                 </div>
               </div>
 
-              <h3>Звания</h3>
-              <div style={{ display: 'flex', gap: isMobile ? 8 : 12, flexWrap: 'wrap', marginTop: 8 }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Звания</h3>
+              <div style={{ display: 'flex', gap: isMobile ? 6 : 12, flexWrap: 'wrap', marginTop: isMobile ? 6 : 8 }}>
                 {visibleBadges.map((b, i) => {
                   const icon = b.tone === 'achievement' ? '🏆' : b.tone === 'streak' ? '🔥' : b.tone === 'veteran' ? '🛡️' : '👑';
                   const gradient = b.tone === 'achievement'
@@ -215,8 +215,8 @@ const TeamProfile: React.FC = () => {
           </Card>
         ) : (
           // Даже если званий нет, покажем крупный блок команды
-          <Card style={{ marginBottom: 12 }}>
-            <div className="card-body">
+          <Card style={{ marginBottom: isMobile ? 8 : 12 }}>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -240,10 +240,10 @@ const TeamProfile: React.FC = () => {
 
         {/* Global ranks section */}
         {data?.ranking ? (
-          <Card style={{ marginBottom: 12 }}>
-            <div className="card-body">
-              <h3>Глобальные звания</h3>
-              <div className="muted" style={{ marginBottom: 8 }}>
+          <Card style={{ marginBottom: isMobile ? 8 : 12 }}>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Глобальные звания</h3>
+              <div className="muted" style={{ marginBottom: isMobile ? 6 : 8, fontSize: isMobile ? '0.9em' : undefined }}>
                 Текущее звание: <b>{data.ranking.globalRank?.title || '—'}</b>
                 {data.ranking.nextRank ? (
                   <span> · Следующее: {data.ranking.nextRank.title} (от {data.ranking.nextRank.minPoints})</span>
@@ -256,52 +256,62 @@ const TeamProfile: React.FC = () => {
 
         {/* Performance Trends */}
         {data?.trends ? (
-          <Card style={{ marginBottom: 12 }}>
-            <div className="card-body">
+          <Card style={{ marginBottom: isMobile ? 8 : 12 }}>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
               <PerformanceTrends timeline={data.trends.timeline} monthly={data.trends.monthly} trend_score_delta={data.trends.trend_score_delta} />
             </div>
           </Card>
         ) : null}
 
         <div className="card-grid" style={{ 
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))'
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: isMobile ? '8px' : undefined,
+          marginTop: isMobile ? '8px' : undefined
         }}>
-          <Card><div className="card-body"><h4>Сумма очков</h4><div className="text-2xl">{data.total_points}</div><div className="mt-1"><MiniLineChart data={recentPoints} /></div></div></Card>
-          <Card><div className="card-body"><h4>Средний итог</h4><div className="text-2xl">{data.avg_points}</div><div className="mt-1"><MiniLineChart data={recentPlaces.map(p=>-p)} stroke="var(--gray-600)" fill="rgba(0,0,0,0.08)" /></div></div></Card>
-          <Card><div className="card-body"><h4>Медали</h4><div>🥇 {data.placements.first} · 🥈 {data.placements.second} · 🥉 {data.placements.third}</div><div className="mt-1"><ProgressStat label="Win rate" value={winRate} /><div className="mt-1" /><ProgressStat label="Podium rate" value={podiumRate} color="var(--violet-500)" /></div></div></Card>
+          <Card><div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}><h4 style={{ fontSize: isMobile ? '1em' : undefined, marginBottom: isMobile ? 6 : undefined }}>Сумма очков</h4><div className="text-2xl" style={{ fontSize: isMobile ? '1.5em' : undefined }}>{data.total_points}</div><div className="mt-1" style={{ marginTop: isMobile ? 6 : undefined }}><MiniLineChart data={recentPoints} /></div></div></Card>
+          <Card><div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}><h4 style={{ fontSize: isMobile ? '1em' : undefined, marginBottom: isMobile ? 6 : undefined }}>Средний итог</h4><div className="text-2xl" style={{ fontSize: isMobile ? '1.5em' : undefined }}>{data.avg_points}</div><div className="mt-1" style={{ marginTop: isMobile ? 6 : undefined }}><MiniLineChart data={recentPlaces.map(p=>-p)} stroke="var(--gray-600)" fill="rgba(0,0,0,0.08)" /></div></div></Card>
+          <Card><div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}><h4 style={{ fontSize: isMobile ? '1em' : undefined, marginBottom: isMobile ? 6 : undefined }}>Медали</h4><div style={{ fontSize: isMobile ? '0.9em' : undefined }}>🥇 {data.placements.first} · 🥈 {data.placements.second} · 🥉 {data.placements.third}</div><div className="mt-1" style={{ marginTop: isMobile ? 6 : undefined }}><ProgressStat label="Win rate" value={winRate} /><div className="mt-1" style={{ marginTop: isMobile ? 4 : undefined }} /><ProgressStat label="Podium rate" value={podiumRate} color="var(--violet-500)" /></div></div></Card>
         </div>
 
         <div className="card-grid" style={{ 
-          marginTop: 16,
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))'
+          marginTop: isMobile ? 8 : 16,
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: isMobile ? '8px' : undefined
         }}>
           <Card>
-            <div className="card-body">
-              <h3>Сильные/слабые раунды</h3>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Сильные/слабые раунды</h3>
               <MiniBarChart labels={roundChart.labels} values={roundChart.values} />
             </div>
           </Card>
           <Card>
-            <div className="card-body">
-              <h3>Клатч и серии</h3>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Клатч и серии</h3>
               <div className="muted">Серия побед: <b>{streaks.wins}</b></div>
               <div className="muted">Серия подиумов: <b>{streaks.podiums}</b></div>
             </div>
           </Card>
           <Card>
-            <div className="card-body">
-              <h3>Бенчмарки</h3>
-              <div className="mt-1"><ProgressStat label="Средний итог (персентиль)" value={benchmarks.avg_points_pct} /></div>
-              <div className="mt-1" />
-              <div className="mt-1"><ProgressStat label="Сумма очков (персентиль)" value={benchmarks.total_points_pct} color="var(--violet-500)" /></div>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Бенчмарки</h3>
+              <div className="mt-1" style={{ marginTop: isMobile ? 6 : undefined }}><ProgressStat label="Средний итог (персентиль)" value={benchmarks.avg_points_pct} /></div>
+              <div className="mt-1" style={{ marginTop: isMobile ? 4 : undefined }} />
+              <div className="mt-1" style={{ marginTop: isMobile ? 6 : undefined }}><ProgressStat label="Сумма очков (персентиль)" value={benchmarks.total_points_pct} color="var(--violet-500)" /></div>
             </div>
           </Card>
         </div>
 
         {/* Head-to-Head виджет во всю ширину */}
-        <Card style={{ marginTop: 16 }}>
-          <div className="card-body">
-            <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Card style={{ marginTop: isMobile ? 8 : 16 }}>
+          <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+            <h3 style={{ 
+              marginBottom: isMobile ? 10 : 16, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8,
+              fontSize: isMobile ? '1.1em' : undefined,
+              flexWrap: isMobile ? 'wrap' : 'nowrap'
+            }}>
               ⚔️ Head‑to‑Head
               <span className="muted" style={{ fontSize: '0.9em', fontWeight: 'normal' }}>
                 ({(data.h2h || []).length} соперников)
@@ -309,14 +319,14 @@ const TeamProfile: React.FC = () => {
             </h3>
             
             {(data.h2h || []).length === 0 ? (
-              <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+              <div className="muted" style={{ textAlign: 'center', padding: isMobile ? 12 : 20 }}>
                 Нет данных о противостояниях
               </div>
             ) : (
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', 
-                gap: isMobile ? 12 : 16 
+                gap: isMobile ? 8 : 16 
               }}>
                 {(data.h2h || []).map((o: any) => {
                   const totalGames = o.games || 0;
@@ -333,7 +343,7 @@ const TeamProfile: React.FC = () => {
                       style={{ 
                         background: 'var(--bg-secondary)', 
                         borderRadius: 'var(--radius-md)', 
-                        padding: 16,
+                        padding: isMobile ? 10 : 16,
                         border: '1px solid var(--border-color)',
                         transition: 'all 0.2s ease'
                       }}
@@ -351,9 +361,9 @@ const TeamProfile: React.FC = () => {
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'center', 
-                        marginBottom: 12,
+                        marginBottom: isMobile ? 8 : 12,
                         flexWrap: isMobile ? 'wrap' : 'nowrap',
-                        gap: isMobile ? 8 : 0
+                        gap: isMobile ? 6 : 0
                       }}>
                         <Link 
                           to={`/team/${o.opponent_id}`}
@@ -385,8 +395,8 @@ const TeamProfile: React.FC = () => {
                       {/* Статистика W-L-D */}
                       <div style={{ 
                         display: 'flex', 
-                        gap: isMobile ? 8 : 12, 
-                        marginBottom: 12,
+                        gap: isMobile ? 6 : 12, 
+                        marginBottom: isMobile ? 8 : 12,
                         flexWrap: 'wrap'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -427,7 +437,7 @@ const TeamProfile: React.FC = () => {
                         background: 'var(--gray-200)',
                         overflow: 'hidden',
                         display: 'flex',
-                        marginBottom: 8
+                        marginBottom: isMobile ? 6 : 8
                       }}>
                         {winRate > 0 && (
                           <div style={{ 
@@ -480,12 +490,12 @@ const TeamProfile: React.FC = () => {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', 
-          gap: 'var(--space-lg)', 
-          marginTop: 16 
+          gap: isMobile ? '8px' : 'var(--space-lg)', 
+          marginTop: isMobile ? 8 : 16 
         }}>
           <Card>
-            <div className="card-body">
-              <h3>Удачные столы</h3>
+            <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+              <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Удачные столы</h3>
               <ul style={{ paddingLeft: 20, margin: 0 }}>
                 {(data.table_stats || []).map((t: any) => (
                   <li key={t.table_number} className="muted" style={{ marginBottom: 8 }}>Стол {t.table_number}: игр {t.games}, ср. место {t.avg_place}</li>
@@ -497,18 +507,18 @@ const TeamProfile: React.FC = () => {
 
         
 
-        <Card style={{ marginTop: 16 }}>
-          <div className="card-body">
-            <h3>Последние игры</h3>
+        <Card style={{ marginTop: isMobile ? 8 : 16 }}>
+          <div className="card-body" style={{ padding: isMobile ? '12px' : undefined }}>
+            <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Последние игры</h3>
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
-              gap: isMobile ? 'var(--space-md)' : 'var(--space-lg)', 
-              marginTop: 12 
+              gap: isMobile ? '8px' : 'var(--space-lg)', 
+              marginTop: isMobile ? 8 : 12 
             }}>
               {(data.recent_games || []).map((g: any) => (
                 <Card key={g.game_id}>
-                  <div className="card-body">
+                  <div className="card-body" style={{ padding: isMobile ? '10px' : undefined }}>
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between',
