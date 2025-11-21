@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom';
 import { Game, RoundScore } from '../../../../shared/types';
 import { apiClient } from '../../services/apiClient';
 import { io as socketIO, Socket } from 'socket.io-client';
+import { QRCodeSVG } from 'qrcode.react';
 import './Scoreboard.css';
 
 const Scoreboard: React.FC = () => {
@@ -246,6 +247,26 @@ const Scoreboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* QR-код для просмотра на мобильных устройствах */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-body" style={{ textAlign: 'center', padding: '20px' }}>
+          <div style={{ marginBottom: 12, fontSize: '16px', fontWeight: 600, color: 'var(--gray-700)' }}>
+            Отсканируйте QR-код для просмотра на телефоне
+          </div>
+          <div style={{ display: 'inline-block', padding: '16px', background: 'white', borderRadius: '8px', boxShadow: 'var(--shadow-sm)' }}>
+            <QRCodeSVG 
+              value={`https://pravilnyquiz.ru/board/${gameId}`}
+              size={180}
+              level="M"
+              includeMargin={true}
+            />
+          </div>
+          <div style={{ marginTop: 12, fontSize: '14px', color: 'var(--gray-600)' }}>
+            {`pravilnyquiz.ru/board/${gameId}`}
           </div>
         </div>
       </div>
