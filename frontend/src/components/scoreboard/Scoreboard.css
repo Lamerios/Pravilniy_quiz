@@ -245,6 +245,21 @@
 .team-name-text {
   font-weight: 600;
   color: var(--purple-800);
+  transition: all var(--transition-fast);
+}
+
+.team-name-text:hover {
+  color: var(--purple-600);
+  text-decoration: underline;
+}
+
+.leader-team a {
+  transition: all var(--transition-fast);
+}
+
+.leader-team a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
 }
 
 /* Score Columns */

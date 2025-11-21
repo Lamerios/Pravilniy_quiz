@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Game, RoundScore } from '../../../../shared/types';
 import { apiClient } from '../../services/apiClient';
 import { io as socketIO, Socket } from 'socket.io-client';
@@ -178,7 +178,16 @@ const Scoreboard: React.FC = () => {
                         }}
                       />
                     ) : null}
-                    <strong>{participant.team?.name || `Команда #${participant.team_id}`}</strong>
+                    <Link 
+                      to={`/team/${participant.team_id}`}
+                      style={{ 
+                        textDecoration: 'none', 
+                        color: 'inherit',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {participant.team?.name || `Команда #${participant.team_id}`}
+                    </Link>
                   </div>
                   <div className="leader-details">
                     <span>Стол: {participant.table_number || '—'}</span>
@@ -228,7 +237,16 @@ const Scoreboard: React.FC = () => {
                             }}
                           />
                         ) : null}
-                        <span className="team-name-text">{p.team?.name || `Команда #${p.team_id}`}</span>
+                        <Link 
+                          to={`/team/${p.team_id}`}
+                          className="team-name-text"
+                          style={{ 
+                            textDecoration: 'none', 
+                            color: 'inherit'
+                          }}
+                        >
+                          {p.team?.name || `Команда #${p.team_id}`}
+                        </Link>
                       </div>
                     </td>
                     <td style={{ textAlign: 'center' }}>{p.table_number || '—'}</td>
