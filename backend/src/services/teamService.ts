@@ -15,7 +15,13 @@ export class TeamService {
   async getAllTeams(): Promise<Team[]> {
     try {
       const result = await database.query(
-        'SELECT * FROM teams ORDER BY created_at DESC'
+        `SELECT 
+          t.*,
+          COALESCE(COUNT(DISTINCT gp.game_id), 0)::int AS games_count
+        FROM teams t
+        LEFT JOIN game_participants gp ON gp.team_id = t.id
+        GROUP BY t.id
+        ORDER BY games_count DESC, t.created_at DESC`
       );
       
       logger.info('Retrieved teams list', { count: result.rows.length });

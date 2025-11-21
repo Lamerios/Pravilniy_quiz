@@ -21,7 +21,7 @@ const GameForm: React.FC<GameFormProps> = ({ onSave, onCancel }) => {
   const [eventDate, setEventDate] = useState<string>('');
   
   const [templates, setTemplates] = useState<GameTemplate[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<(Team & { games_count?: number })[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -36,7 +36,13 @@ const GameForm: React.FC<GameFormProps> = ({ onSave, onCancel }) => {
           apiClient.getTeams()
         ]);
         setTemplates(templatesData);
-        setTeams(teamsData);
+        // Сортировка команд от большего к меньшему количеству игр
+        const sortedTeams = [...teamsData].sort((a: any, b: any) => {
+          const gamesA = a.games_count || 0;
+          const gamesB = b.games_count || 0;
+          return gamesB - gamesA; // от большего к меньшему
+        });
+        setTeams(sortedTeams);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ошибка загрузки данных для формы');
       } finally {
