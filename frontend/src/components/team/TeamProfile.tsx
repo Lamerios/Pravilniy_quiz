@@ -190,7 +190,13 @@ const TeamProfile: React.FC = () => {
               </div>
 
               <h3 style={{ fontSize: isMobile ? '1.1em' : undefined, marginBottom: isMobile ? 8 : undefined }}>Звания</h3>
-              <div style={{ display: 'flex', gap: isMobile ? 6 : 12, flexWrap: 'wrap', marginTop: isMobile ? 6 : 8 }}>
+              <div style={{ 
+                display: 'flex', 
+                gap: isMobile ? 8 : 12, 
+                flexWrap: 'wrap', 
+                marginTop: isMobile ? 6 : 8,
+                alignItems: isMobile ? 'stretch' : 'flex-start'
+              }}>
                 {visibleBadges.map((b, i) => {
                   const icon = b.tone === 'achievement' ? '🏆' : b.tone === 'streak' ? '🔥' : b.tone === 'veteran' ? '🛡️' : '👑';
                   const gradient = b.tone === 'achievement'
