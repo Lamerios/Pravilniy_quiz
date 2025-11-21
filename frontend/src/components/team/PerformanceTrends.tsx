@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 interface TrendsProps {
   timeline: Array<{ game_id: number; date: string | null; total: number; place: number }>;
@@ -7,17 +7,35 @@ interface TrendsProps {
 }
 
 export const PerformanceTrends: React.FC<TrendsProps> = ({ timeline, monthly, trend_score_delta }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const points = useMemo(() => timeline.map(t => ({ x: t.date ? new Date(t.date) : new Date(), score: t.total, place: t.place })), [timeline]);
   const color = trend_score_delta >= 0 ? '#22c55e' : '#ef4444';
+
+  // Сортировка monthly от свежего к более раннему
+  const sortedMonthly = useMemo(() => {
+    return [...monthly].sort((a, b) => {
+      // Формат месяца: "YYYY-MM" или "YYYY-MM-DD"
+      return b.month.localeCompare(a.month);
+    });
+  }, [monthly]);
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <h3 style={{ marginTop: 0 }}>Динамика по играм</h3>
-        <div className="muted">Тренд: <b style={{ color }}>{trend_score_delta >= 0 ? '+' : ''}{trend_score_delta}</b></div>
+        <h3 style={{ marginTop: 0, fontSize: isMobile ? '1.1em' : undefined }}>Динамика по играм</h3>
+        <div className="muted" style={{ fontSize: isMobile ? '0.9em' : undefined }}>Тренд: <b style={{ color }}>{trend_score_delta >= 0 ? '+' : ''}{trend_score_delta}</b></div>
       </div>
 
-      {/* Простейший инлайновый график без сторонних либ (пока) */}
+      {/* Простейший инлайновый график без сторонних либ (пока) - скрыт на мобильных */}
+      {!isMobile && (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-body">
@@ -71,11 +89,12 @@ export const PerformanceTrends: React.FC<TrendsProps> = ({ timeline, monthly, tr
           </div>
         </div>
       </div>
+      )}
 
-      <div style={{ marginTop: 12 }}>
-        <div className="muted" style={{ marginBottom: 6 }}>Агрегаты по месяцам</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
-          {monthly.map(m => (
+      <div style={{ marginTop: isMobile ? 0 : 12 }}>
+        <div className="muted" style={{ marginBottom: 6, fontSize: isMobile ? '0.9em' : undefined }}>Агрегаты по месяцам</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))', gap: isMobile ? 6 : 8 }}>
+          {sortedMonthly.map(m => (
             <div key={m.month} className="card" style={{ background: 'var(--bg-secondary)' }}>
               <div className="card-body">
                 <div style={{ fontWeight: 700 }}>{m.month}</div>
