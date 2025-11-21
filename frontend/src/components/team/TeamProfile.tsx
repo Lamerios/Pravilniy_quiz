@@ -13,6 +13,14 @@ const TeamProfile: React.FC = () => {
   const [data, setData] = useState<any | null>(null);
   const [global, setGlobal] = useState<any | null>(null);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -162,16 +170,27 @@ const TeamProfile: React.FC = () => {
           <Card style={{ marginBottom: 12 }}>
             <div className="card-body">
               {/* Блок команды (аватар + название + количество игр) перенесён в «Звания» и сделан крупнее */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={72} rounded={12} />
-                <div>
-                  <div style={{ fontSize: '1.6em', lineHeight: 1.1, fontWeight: 800 }}>{t.name}</div>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: isMobile ? 12 : 16, 
+                marginBottom: 8,
+                flexWrap: isMobile ? 'wrap' : 'nowrap'
+              }}>
+                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={isMobile ? 56 : 72} rounded={12} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.3em' : '1.6em', 
+                    lineHeight: 1.1, 
+                    fontWeight: 800,
+                    wordBreak: 'break-word'
+                  }}>{t.name}</div>
                   <div className="muted" style={{ fontSize: '0.95em' }}>Игр: {data.games_played}</div>
                 </div>
               </div>
 
               <h3>Звания</h3>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: isMobile ? 8 : 12, flexWrap: 'wrap', marginTop: 8 }}>
                 {visibleBadges.map((b, i) => {
                   const icon = b.tone === 'achievement' ? '🏆' : b.tone === 'streak' ? '🔥' : b.tone === 'veteran' ? '🛡️' : '👑';
                   const gradient = b.tone === 'achievement'
@@ -198,10 +217,20 @@ const TeamProfile: React.FC = () => {
           // Даже если званий нет, покажем крупный блок команды
           <Card style={{ marginBottom: 12 }}>
             <div className="card-body">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={72} rounded={12} />
-                <div>
-                  <div style={{ fontSize: '1.6em', lineHeight: 1.1, fontWeight: 800 }}>{t.name}</div>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: isMobile ? 12 : 16,
+                flexWrap: isMobile ? 'wrap' : 'nowrap'
+              }}>
+                <Avatar name={t.name} src={t.logo_path ? `/uploads/${t.logo_path}` : (t.logo || undefined)} size={isMobile ? 56 : 72} rounded={12} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.3em' : '1.6em', 
+                    lineHeight: 1.1, 
+                    fontWeight: 800,
+                    wordBreak: 'break-word'
+                  }}>{t.name}</div>
                   <div className="muted" style={{ fontSize: '0.95em' }}>Игр: {data.games_played}</div>
                 </div>
               </div>
@@ -234,13 +263,18 @@ const TeamProfile: React.FC = () => {
           </Card>
         ) : null}
 
-        <div className="card-grid">
+        <div className="card-grid" style={{ 
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))'
+        }}>
           <Card><div className="card-body"><h4>Сумма очков</h4><div className="text-2xl">{data.total_points}</div><div className="mt-1"><MiniLineChart data={recentPoints} /></div></div></Card>
           <Card><div className="card-body"><h4>Средний итог</h4><div className="text-2xl">{data.avg_points}</div><div className="mt-1"><MiniLineChart data={recentPlaces.map(p=>-p)} stroke="var(--gray-600)" fill="rgba(0,0,0,0.08)" /></div></div></Card>
           <Card><div className="card-body"><h4>Медали</h4><div>🥇 {data.placements.first} · 🥈 {data.placements.second} · 🥉 {data.placements.third}</div><div className="mt-1"><ProgressStat label="Win rate" value={winRate} /><div className="mt-1" /><ProgressStat label="Podium rate" value={podiumRate} color="var(--violet-500)" /></div></div></Card>
         </div>
 
-        <div className="card-grid" style={{ marginTop: 16 }}>
+        <div className="card-grid" style={{ 
+          marginTop: 16,
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))'
+        }}>
           <Card>
             <div className="card-body">
               <h3>Сильные/слабые раунды</h3>
@@ -279,7 +313,11 @@ const TeamProfile: React.FC = () => {
                 Нет данных о противостояниях
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', 
+                gap: isMobile ? 12 : 16 
+              }}>
                 {(data.h2h || []).map((o: any) => {
                   const totalGames = o.games || 0;
                   const wins = o.wins || 0;
@@ -309,14 +347,24 @@ const TeamProfile: React.FC = () => {
                       }}
                     >
                       {/* Заголовок с командой */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        marginBottom: 12,
+                        flexWrap: isMobile ? 'wrap' : 'nowrap',
+                        gap: isMobile ? 8 : 0
+                      }}>
                         <Link 
                           to={`/team/${o.opponent_id}`}
                           style={{ 
                             fontWeight: 600, 
                             color: 'var(--color-primary)',
                             textDecoration: 'none',
-                            fontSize: '1.1em'
+                            fontSize: isMobile ? '1em' : '1.1em',
+                            wordBreak: 'break-word',
+                            flex: 1,
+                            minWidth: 0
                           }}
                         >
                           {o.opponent_name}
@@ -327,14 +375,20 @@ const TeamProfile: React.FC = () => {
                           padding: '4px 8px', 
                           borderRadius: 'var(--radius-sm)',
                           fontSize: '0.85em',
-                          fontWeight: 600
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap'
                         }}>
                           {totalGames} игр
                         </div>
                       </div>
 
                       {/* Статистика W-L-D */}
-                      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: isMobile ? 8 : 12, 
+                        marginBottom: 12,
+                        flexWrap: 'wrap'
+                      }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <div style={{ 
                             width: 8, 
@@ -399,12 +453,18 @@ const TeamProfile: React.FC = () => {
                       </div>
 
                       {/* Процентное соотношение */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85em' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        fontSize: '0.85em',
+                        flexWrap: isMobile ? 'wrap' : 'nowrap',
+                        gap: isMobile ? 4 : 0
+                      }}>
                         <span style={{ color: 'var(--green-600)', fontWeight: 600 }}>
                           {winRate.toFixed(0)}% побед
                         </span>
                         {totalGames > 0 && (
-                          <span className="muted">
+                          <span className="muted" style={{ whiteSpace: 'nowrap' }}>
                             {wins > losses ? '😤 Отстаёт' : wins < losses ? '🔥 Доминирует' : '⚖️ Равные'}
                           </span>
                         )}
@@ -417,13 +477,18 @@ const TeamProfile: React.FC = () => {
           </div>
         </Card>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-lg)', marginTop: 16 }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: 'var(--space-lg)', 
+          marginTop: 16 
+        }}>
           <Card>
             <div className="card-body">
               <h3>Удачные столы</h3>
-              <ul>
+              <ul style={{ paddingLeft: 20, margin: 0 }}>
                 {(data.table_stats || []).map((t: any) => (
-                  <li key={t.table_number} className="muted">Стол {t.table_number}: игр {t.games}, ср. место {t.avg_place}</li>
+                  <li key={t.table_number} className="muted" style={{ marginBottom: 8 }}>Стол {t.table_number}: игр {t.games}, ср. место {t.avg_place}</li>
                 ))}
               </ul>
             </div>
@@ -435,13 +500,33 @@ const TeamProfile: React.FC = () => {
         <Card style={{ marginTop: 16 }}>
           <div className="card-body">
             <h3>Последние игры</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-lg)', marginTop: 12 }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
+              gap: isMobile ? 'var(--space-md)' : 'var(--space-lg)', 
+              marginTop: 12 
+            }}>
               {(data.recent_games || []).map((g: any) => (
                 <Card key={g.game_id}>
                   <div className="card-body">
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Link to={`/board/${g.game_id}`}>{g.game_name}</Link>
-                      <span className="muted">место {g.place}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      flexWrap: isMobile ? 'wrap' : 'nowrap',
+                      gap: isMobile ? 4 : 0,
+                      marginBottom: 4
+                    }}>
+                      <Link 
+                        to={`/board/${g.game_id}`}
+                        style={{ 
+                          wordBreak: 'break-word',
+                          flex: 1,
+                          minWidth: 0
+                        }}
+                      >
+                        {g.game_name}
+                      </Link>
+                      <span className="muted" style={{ whiteSpace: 'nowrap' }}>место {g.place}</span>
                     </div>
                     <div className="muted">{g.total} баллов</div>
                   </div>
