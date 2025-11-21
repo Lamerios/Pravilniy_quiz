@@ -105,7 +105,7 @@ const Scoreboard: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const [g, sc] = await Promise.all([apiClient.getGame(gameId), apiClient.getScores(gameId)]);
+      const [g, sc] = await Promise.all([apiClient.getPublicGame(gameId), apiClient.getPublicScores(gameId)]);
       setGame(g);
       setScores(sc);
     } catch (err) {

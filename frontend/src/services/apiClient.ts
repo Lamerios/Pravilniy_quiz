@@ -358,6 +358,29 @@ class ApiClient {
     return res.data.data;
   }
 
+  async getPublicGame(gameId: number): Promise<Game> {
+    try {
+      const response: AxiosResponse<ApiResponse<Game>> = await this.client.get(`/api/public/games/${gameId}`);
+      if (!response.data.data) {
+        throw new Error('Игра не найдена');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch public game:', error);
+      throw new Error('Не удалось загрузить игру');
+    }
+  }
+
+  async getPublicScores(gameId: number): Promise<RoundScore[]> {
+    try {
+      const response: AxiosResponse<ApiResponse<RoundScore[]>> = await this.client.get(`/api/public/games/${gameId}/scores`);
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Failed to fetch public scores:', error);
+      throw new Error('Не удалось загрузить результаты игры');
+    }
+  }
+
   /**
    * Check API health
    * @returns Promise<boolean>
